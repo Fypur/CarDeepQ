@@ -1,0 +1,13 @@
+new Vector2(108, 562), 4.712389f, 0f
+new Vector2(102, 239), 5.3524036f, 2f
+new Vector2(257, 93), 5.802414f, 4f
+new Vector2(589, 53), 0.25923973f, 7f
+new Vector2(946, 103), 0.34923965f, 10f
+new Vector2(618, 396), 2.8492374f, 14f
+new Vector2(786, 466), 0.16924016f, 16f
+new Vector2(1130, 337), 5.8724165f, 20f
+new Vector2(1382, 337), 0.4592405f, 22f
+new Vector2(1518, 552), 1.1392394f, 25f
+new Vector2(1393, 739), 2.5692382f, 27f
+new Vector2(1155, 762), 3.1892376f, 29f
+new Vector2(383, 768), 3.2592375f, 33f
