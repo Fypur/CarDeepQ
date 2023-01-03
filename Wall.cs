@@ -20,6 +20,6 @@ public class Wall : Solid
 
     public override void Render()
     {
-        Drawing.Draw(Drawing.pointTexture, Bounds, Sprite.Color, ((BoxColliderRotated)Collider).Rotation, Vector2.Zero, Vector2.One);
+        Drawing.Draw(Drawing.PointTexture, Bounds, Sprite.Color, ((BoxColliderRotated)Collider).Rotation, Vector2.Zero, Vector2.One);
     }
 }

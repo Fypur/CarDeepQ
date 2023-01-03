@@ -13,7 +13,7 @@ namespace CarDeepQ
     //Made with help of https://towardsdatascience.com/building-a-neural-network-framework-in-c-16ef56ce1fef
     public class NeuralNetwork
     {
-        public float LearningRate = 0.01f;
+        public float LearningRate = 0.0001f;
         public readonly int[] layers;
 
         private float[][] neurons;

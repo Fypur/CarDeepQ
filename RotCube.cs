@@ -63,6 +63,6 @@ public class RotCube : Entity
     {
         base.Render();
         if(mouseFollow)
-            Drawing.Draw(Drawing.pointTexture, new Rectangle(Bounds.X + (int)HalfSize.X, Bounds.Y + (int)HalfSize.Y, Bounds.Width, Bounds.Height), Sprite.Color, ((BoxColliderRotated)Collider).Rotation,  Vector2.One / 2, Vector2.One);
+            Drawing.Draw(Drawing.PointTexture, new Rectangle(Bounds.X + (int)HalfSize.X, Bounds.Y + (int)HalfSize.Y, Bounds.Width, Bounds.Height), Sprite.Color, ((BoxColliderRotated)Collider).Rotation,  Vector2.One / 2, Vector2.One);
     }
 }

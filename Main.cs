@@ -29,7 +29,7 @@ public class Main : Game
         IsMouseVisible = true;
         instance = this;
 
-        _graphics.SynchronizeWithVerticalRetrace = false;
+       _graphics.SynchronizeWithVerticalRetrace = false;
         IsFixedTimeStep = false;
     }
 
@@ -127,8 +127,6 @@ public class Main : Game
         else
         {
             Debug.Clear();
-            Drawing.Debug.Clear();
-            Drawing.DebugPosUpdate.Clear();
         }
         
         _spriteBatch.End();

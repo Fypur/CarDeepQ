@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.Serialization;
 using System.Xml.Schema;
 using Fiourp;
 using Microsoft.Xna.Framework;
@@ -14,7 +15,7 @@ public class Environment : Entity
     public int timeStep = 0;
     private int targetTimeStep = 0;
     private int gateTimeStep = 0;
-    private static bool respawn1 = false;
+    private static bool respawn1 = true;
 
     public RewardGate[] RewardGates = InstantiateGates();
     public Tuple<Vector2, float, int>[] RespawnPoints = LoadRespawnPoints();
@@ -25,6 +26,9 @@ public class Environment : Entity
         this.agent = agent;
         Car = new Car(new Vector2(230 * Wall.scale + Wall.offsetX, (1000 - 400) * Wall.scale + Wall.offsetY), (float)(3 * Math.PI / 2));
         Car.nextGate = RewardGates[0];
+        Engine.CurrentMap.Instantiate(Car);
+        Car.Active = false;
+        Car.Visible = false;
         
         Visible = rendered;
     }
@@ -110,15 +114,15 @@ public class Environment : Entity
                 agent.epsilon += 0.03f;*/
         }
 
-        if (Input.GetKeyDown(Keys.S) && Visible)
+        /*if (Input.GetKeyDown(Keys.S) && Visible)
             agent.Network.Save("/home/f/Documents/CarDeepQ/saves/net3");
         if (Input.GetKeyDown(Keys.L) && Visible)
-            agent.Network.Load("/home/f/Documents/CarDeepQ/saves/net3");
+            agent.Network.Load("/home/f/Documents/CarDeepQ/saves/net3");*/
 
         
         if (Main.episode >= 5000)
         {
-            agent.Network.Save("/home/f/Documents/CartPoleDeepQ/saves/net32");
+            agent.Network.Save("C:\\Users\\zddng\\Documents\\Monogame\\CarDeepQ\\net32\\");
         }
         
         

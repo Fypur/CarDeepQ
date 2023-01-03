@@ -5,6 +5,7 @@ using System.Xml;
 using Fiourp;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
+using static Fiourp.Input;
 
 namespace CarDeepQ;
 
@@ -14,7 +15,7 @@ public class Car : Actor
     public Vector2 FrontVector;
 
     private const float friction = 0.1f;
-    private const float accelSpeed = 0.33f;
+    private const float accelSpeed = 0.66f;
     private const float turnForce = 0.05f;
 
     public Vector2 respawnPoint;
@@ -71,6 +72,10 @@ public class Car : Actor
         
         MoveX(Velocity.X, Reset);
         MoveY(Velocity.Y, Reset);
+
+        /*float[] state = GetState();
+        for (int i = 0; i < state.Length; i++)
+            Debug.LogUpdate(state[i]);*/
     }
 
     public bool Update(int action)
@@ -113,7 +118,7 @@ public class Car : Actor
     public override void Render()
     {
         //Drawing.Draw(Bounds, Rotation, Color.Red);
-        Drawing.Draw(Drawing.pointTexture, new Rectangle(Bounds.X + (int)HalfSize.X, Bounds.Y + (int)HalfSize.Y, Bounds.Width, Bounds.Height), Sprite.Color, Rotation,  Vector2.One / 2, Vector2.One);
+        Drawing.Draw(Drawing.PointTexture, new Rectangle(Bounds.X + (int)HalfSize.X, Bounds.Y + (int)HalfSize.Y, Bounds.Width, Bounds.Height), Sprite.Color, Rotation,  Vector2.One / 2, Vector2.One);
     }
 
     public float[] GetState()
@@ -124,11 +129,18 @@ public class Car : Actor
             rays.Add(new Ray(MiddlePos, VectorHelper.RotateDeg(FrontVector, i), 150));
         
         Ray.ShootRays(rays.ToArray()).CopyTo(state, 0);
-        float vLen = VectorHelper.Projection(Velocity, FrontVector).Length();
-        state[8] = Environment.Normalize(Math.Max(vLen, 0), 0, 1f);
-        state[9] = Environment.Normalize(Math.Min(vLen, 0), -1, 0f);
+        float vLen = VectorHelper.Projection(Velocity, FrontVector).Length() / (accelSpeed * 1 / friction);
+        int sameDir = Math.Sign(Vector2.Dot(FrontVector, Velocity));
+
+        if(sameDir == 1)
+            state[8] = vLen;
+        else
+            state[9] = vLen;
+
+        //Debug.LogUpdate("vlen  " + VectorHelper.Round(VectorHelper.Projection(Velocity, FrontVector)));
         //state[9] = Environment.Normalize(((BoxColliderRotated)nextGate.Collider).Rotation, 0, (float)Math.PI * 2);
-        state[10] = Environment.Normalize(Math.Min(Vector2.Distance(MiddlePos, nextGate.MiddlePos), 150), 0, 150);
+
+        state[10] = Environment.Normalize(Math.Min(Vector2.Distance(MiddlePos, nextGate.MiddlePos), 200), 0, 200);
 
         for(int i = 0; i < state.Length; i++)
             if(float.IsNaN(state[i]) || state[i] < -0.1f || state[i] > 1.1f)

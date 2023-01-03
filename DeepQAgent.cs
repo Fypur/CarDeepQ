@@ -1,18 +1,19 @@
 using System;
 using System.Linq;
 using Fiourp;
+using ImageRecognition;
 
 namespace CarDeepQ;
 
 //Helped heavily by https://github.com/the-deep-learners/TensorFlow-LiveLessons/blob/master/notebooks/cartpole_dqn.ipynb
 public class DeepQAgent
 {
-    public float learningRate = 0.00025f;
+    public float learningRate = 0.5f;
     public float gamma = 0.995f;
     public const int stateSize = 11;
     public const int actionSize = 6;
-    public int[] layers = new int[] { stateSize, 128, 128, 128, actionSize };
-    public int BatchSize = 128;
+    public int[] layers = new int[] { stateSize, 64, 64, actionSize };
+    public int BatchSize = 256;
     public int totalEpisodes = 5000;
     
     public float epsilon = 1;
@@ -22,24 +23,25 @@ public class DeepQAgent
 
     public int targetRefreshRate = 10000;
 
-    public int gateTimeStepThreshold = 1000;
-    public float baseReward = 0f;
+    public int gateTimeStepThreshold = 300;
+    public float baseReward = 0;
     public float deathReward = -1f;
-    public float gateReward = 10;
+    public float gateReward = 1;
 
     public bool learning = true;   
 
-    public Tuple<float[], int, float, float[], bool>[] memory = new Tuple<float[], int, float, float[], bool>[20000];
+    public Tuple<float[], int, float, float[], bool>[] memory = new Tuple<float[], int, float, float[], bool>[25000];
     public int iMemory = 0;
     public bool filledMemory = false;
     
-    public NeuralNetwork Network;
-    public NeuralNetwork TargetNetwork;
+    public NN2 Network;
+    public NN2 TargetNetwork;
 
     public DeepQAgent()
     {
-        Network = new NeuralNetwork(layers, learningRate);
+        Network = new NN2(layers, learningRate);
         TargetNetwork = Network.Copy();
+
         if (!learning)
         {
             epsilon = 0;
@@ -47,8 +49,8 @@ public class DeepQAgent
         }
         else
         {
-            decayStep = 10000000;
-            Network.Load("/home/f/Documents/CarDeepQ/saves/net2");
+            decayStep = 0.00001f;
+            //Network.Load("C:\\Users\\zddng\\Documents\\Monogame\\CarDeepQ\\saves2\\net");
             TargetNetwork = Network.Copy();
             //epsilonDecay = (float)Math.Pow(epsilonMin, (double)1 / totalEpisodes);
             //epsilonDecay = (float)1 / (totalEpisodes + 1);
@@ -72,6 +74,7 @@ public class DeepQAgent
         decayStep += 1f;
 
         epsilon = epsilonMin + (1 - epsilonMin) * (float)Math.Exp(-epsilonDecay * decayStep);
+        //epsilon -= 0.001f;
 
         var r = Rand.NextDouble();
         if (r < epsilon)
@@ -137,6 +140,8 @@ public class DeepQAgent
             float[] state = info.Item1;
             int action = info.Item2;
             float reward = info.Item3;
+            if (info.Item3 == 10)
+                Debug.Log("10");
             float[] nextState = info.Item4;
             bool done = info.Item5;
 
