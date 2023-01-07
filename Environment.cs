@@ -15,7 +15,7 @@ public class Environment : Entity
     public int timeStep = 0;
     private int targetTimeStep = 0;
     private int gateTimeStep = 0;
-    private static bool respawn1 = true;
+    private static bool respawn1 = false;
 
     public RewardGate[] RewardGates = InstantiateGates();
     public Tuple<Vector2, float, int>[] RespawnPoints = LoadRespawnPoints();
@@ -120,9 +120,9 @@ public class Environment : Entity
             agent.Network.Load("/home/f/Documents/CarDeepQ/saves/net3");*/
 
         
-        if (Main.episode >= 5000)
+        if (Main.episode >= 5000 && Main.episode % 1000 == 0)
         {
-            agent.Network.Save("C:\\Users\\zddng\\Documents\\Monogame\\CarDeepQ\\net32\\");
+            agent.Network.Save("C:\\Users\\Administrateur\\Documents\\Monogame\\CarDeepQ\\net32\\");
         }
         
         

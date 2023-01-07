@@ -24,8 +24,8 @@ namespace ImageRecognition
         public float[][][] Weights;
 
         public float LearningRate;
-        public static Func<float, float> ActivationHidden = ReLU;
-        public static Func<float, float> ActivationOut = ReLU;
+        public static Func<float, float> ActivationHidden = eLU;
+        public static Func<float, float> ActivationOut = Linear;
 
         public static Func<float, float> ActivationHiddenDer = Derivatives(ActivationHidden);
         public static Func<float, float> ActivationOutDer = Derivatives(ActivationOut);
@@ -53,10 +53,11 @@ namespace ImageRecognition
                 {
                     Biases[l][n] = GaussianRandom(0, 0.5f);
                     Weights[l][n] = new float[Layers[l - 1]];
+                    float std = (float)Math.Sqrt(2.0 / Layers[l - 1]);
 
                     for (int prevLayerN = 0; prevLayerN < Neurons[l - 1].Length; prevLayerN++)
                     {
-                        Weights[l][n][prevLayerN] = GaussianRandom(0, 0.5f);
+                        Weights[l][n][prevLayerN] = GaussianRandom(0, std);
                     }
                 }
             }
@@ -252,12 +253,36 @@ namespace ImageRecognition
             return 0;
         }
 
+        private static float eLU(float x)
+        {
+            if (x > 0)
+                return x;
+            return (float)(0.1f * (Math.Exp(x) - 1));
+        }
+
+        private static float eLUPrime(float x)
+        {
+            if (x > 0)
+                return 1;
+            return eLU(x) + 0.1f;
+        }
+
+        private static float Linear(float x)
+            => x;
+
+        private static float LinearPrime(float x)
+            => 1;
+
         public static Func<float, float> Derivatives(Func<float, float> function)
         {
             if (function == Sigmoid)
                 return SigmoidPrime;
             if (function == ReLU)
                 return ReLUPrime;
+            if (function == eLU)
+                return eLUPrime;
+            if (function == Linear)
+                return LinearPrime;
 
             throw new Exception("Could not find derivative of Activation Function");
         }

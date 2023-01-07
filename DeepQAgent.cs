@@ -8,29 +8,29 @@ namespace CarDeepQ;
 //Helped heavily by https://github.com/the-deep-learners/TensorFlow-LiveLessons/blob/master/notebooks/cartpole_dqn.ipynb
 public class DeepQAgent
 {
-    public float learningRate = 0.5f;
-    public float gamma = 0.995f;
+    public float learningRate = 0.001f;
+    public float gamma = 0.95f;
     public const int stateSize = 11;
     public const int actionSize = 6;
-    public int[] layers = new int[] { stateSize, 64, 64, actionSize };
-    public int BatchSize = 256;
-    public int totalEpisodes = 5000;
+    public int[] layers = new int[] { stateSize, 32, 32, actionSize };
+    public int BatchSize = 64;
+    public int totalEpisodes = 50000;
     
     public float epsilon = 1;
-    public float epsilonMin = 0.01f;
+    public float epsilonMin = 0.03f;
     public float epsilonDecay = 0.00005f;
     public float decayStep = 0;
 
     public int targetRefreshRate = 10000;
 
-    public int gateTimeStepThreshold = 300;
-    public float baseReward = 0;
-    public float deathReward = -1f;
-    public float gateReward = 1;
+    public int gateTimeStepThreshold = 200;
+    public float baseReward = -0.1f;
+    public float deathReward = -5f;
+    public float gateReward = 10;
 
     public bool learning = true;   
 
-    public Tuple<float[], int, float, float[], bool>[] memory = new Tuple<float[], int, float, float[], bool>[25000];
+    public Tuple<float[], int, float, float[], bool>[] memory = new Tuple<float[], int, float, float[], bool>[100000];
     public int iMemory = 0;
     public bool filledMemory = false;
     
@@ -49,7 +49,7 @@ public class DeepQAgent
         }
         else
         {
-            decayStep = 0.00001f;
+            decayStep = 0;
             //Network.Load("C:\\Users\\zddng\\Documents\\Monogame\\CarDeepQ\\saves2\\net");
             TargetNetwork = Network.Copy();
             //epsilonDecay = (float)Math.Pow(epsilonMin, (double)1 / totalEpisodes);
@@ -75,7 +75,6 @@ public class DeepQAgent
 
         epsilon = epsilonMin + (1 - epsilonMin) * (float)Math.Exp(-epsilonDecay * decayStep);
         //epsilon -= 0.001f;
-
         var r = Rand.NextDouble();
         if (r < epsilon)
         {
@@ -140,8 +139,6 @@ public class DeepQAgent
             float[] state = info.Item1;
             int action = info.Item2;
             float reward = info.Item3;
-            if (info.Item3 == 10)
-                Debug.Log("10");
             float[] nextState = info.Item4;
             bool done = info.Item5;
 
