@@ -8,7 +8,7 @@ namespace CarDeepQ;
 //Helped heavily by https://github.com/the-deep-learners/TensorFlow-LiveLessons/blob/master/notebooks/cartpole_dqn.ipynb
 public class DeepQAgent
 {
-    public float learningRate = 0.001f;
+    public float learningRate = 0.01f;
     public float gamma = 0.95f;
     public const int stateSize = 11;
     public const int actionSize = 6;
@@ -24,8 +24,8 @@ public class DeepQAgent
     public int targetRefreshRate = 10000;
 
     public int gateTimeStepThreshold = 200;
-    public float baseReward = -0.1f;
-    public float deathReward = -5f;
+    public float baseReward = -0;
+    public float deathReward = -1;
     public float gateReward = 10;
 
     public bool learning = true;   

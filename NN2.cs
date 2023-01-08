@@ -22,6 +22,7 @@ namespace ImageRecognition
         public float[][] Z;
         public float[][] Biases;
         public float[][][] Weights;
+        public float[][][] MovingAverage;
 
         public float LearningRate;
         public static Func<float, float> ActivationHidden = eLU;
@@ -29,6 +30,8 @@ namespace ImageRecognition
 
         public static Func<float, float> ActivationHiddenDer = Derivatives(ActivationHidden);
         public static Func<float, float> ActivationOutDer = Derivatives(ActivationOut);
+
+        public float Beta = 0.9f;
 
         public NN2(int[] layers, float learningRate)
         {
@@ -39,6 +42,7 @@ namespace ImageRecognition
             Neurons = new float[Layers.Length][];
             Biases = new float[Layers.Length][];
             Weights = new float[Layers.Length][][];
+            MovingAverage = new float[Layers.Length][][];
 
             Neurons[0] = new float[Layers[0]];
 
@@ -46,18 +50,21 @@ namespace ImageRecognition
             for (int l = 1; l < Layers.Length; l++)
             {
                 Neurons[l] = new float[Layers[l]];
-                Weights[l] = new float[Layers[l]][];
                 Biases[l] = new float[Layers[l]];
+                Weights[l] = new float[Layers[l]][];
+                MovingAverage[l] = new float[Layers[l]][];
 
                 for(int n = 0; n < Neurons[l].Length; n++)
                 {
                     Biases[l][n] = GaussianRandom(0, 0.5f);
                     Weights[l][n] = new float[Layers[l - 1]];
+                    MovingAverage[l][n] = new float[Layers[l - 1]];
                     float std = (float)Math.Sqrt(2.0 / Layers[l - 1]);
 
                     for (int prevLayerN = 0; prevLayerN < Neurons[l - 1].Length; prevLayerN++)
                     {
                         Weights[l][n][prevLayerN] = GaussianRandom(0, std);
+                        MovingAverage[l][n][prevLayerN] = 1;
                     }
                 }
             }
@@ -192,7 +199,9 @@ namespace ImageRecognition
                     Biases[l][n] += moveBiases[l][n] * LearningRate / inputs.Length;
                     for (int prevN = 0; prevN < Neurons[l - 1].Length; prevN++)
                     {
-                        Weights[l][n][prevN] += moveWeights[l][n][prevN] * LearningRate / inputs.Length;
+                        moveWeights[l][n][prevN] /= inputs.Length;
+                        MovingAverage[l][n][prevN] = Beta * MovingAverage[l][n][prevN] + (1 - Beta) * moveWeights[l][n][prevN] * moveWeights[l][n][prevN];
+                        Weights[l][n][prevN] += moveWeights[l][n][prevN] * (LearningRate / (float)Math.Sqrt(MovingAverage[l][n][prevN]));
                     }
                 }
             }

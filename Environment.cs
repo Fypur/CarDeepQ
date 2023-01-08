@@ -1,9 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Runtime.Serialization;
 using System.Xml.Schema;
 using Fiourp;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
+using ScottPlot;
 
 namespace CarDeepQ;
 
@@ -15,12 +17,15 @@ public class Environment : Entity
     public int timeStep = 0;
     private int targetTimeStep = 0;
     private int gateTimeStep = 0;
-    private static bool respawn1 = false;
+    private static bool respawn1 = true;
 
     public RewardGate[] RewardGates = InstantiateGates();
     public Tuple<Vector2, float, int>[] RespawnPoints = LoadRespawnPoints();
     private int gateIndex = 0;
-    
+    public static Plot p;
+    public static List<double> pointsX = new();
+    public static List<double> pointsY = new();
+
     public Environment(DeepQAgent agent, bool rendered) : base(Vector2.Zero)
     {
         this.agent = agent;
@@ -31,6 +36,9 @@ public class Environment : Entity
         Car.Visible = false;
         
         Visible = rendered;
+
+        p = new();
+        p.Title("Stuff");
     }
 
     public override void Update()
@@ -94,10 +102,22 @@ public class Environment : Entity
 
             Console.WriteLine($"Episode {Main.episode}, Score {Car.TotalReward}, Epsilon: {agent.epsilon}");
             Console.ForegroundColor = ConsoleColor.Gray;
-            
+
+            Car.nextGate = RewardGates[gateIndex];
+
+            pointsX.Add(Main.episode);
+            pointsY.Add(Car.TotalReward);
+            if (Main.episode % 20 == 0)
+            {
+                p.AddSignalXY(pointsX.ToArray(), pointsY.ToArray());
+                p.SaveFig("final.png");
+                p.Clear();
+            }
+
             Main.episode++;
             timeStep = 0;
             gateTimeStep = 0;
+
 
             if(agent.learning && (agent.filledMemory || agent.iMemory > agent.BatchSize))
                 agent.Replay();
@@ -107,8 +127,9 @@ public class Environment : Entity
             Car.respawnRot = r.Item2; // + Rand.NextFloat(-0.7f, 0.7f);
 
             Car.Reset();
+            
             gateIndex = r.Item3;
-            Car.nextGate = RewardGates[gateIndex];
+            
 
             /*if(Main.episode > 100 && Car.TotalReward == agent.deathReward)
                 agent.epsilon += 0.03f;*/
