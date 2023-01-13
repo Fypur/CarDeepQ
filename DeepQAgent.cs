@@ -9,28 +9,28 @@ namespace CarDeepQ;
 public class DeepQAgent
 {
     public float learningRate = 0.01f;
-    public float gamma = 0.95f;
+    public float gamma = 0.96f;
     public const int stateSize = 11;
     public const int actionSize = 6;
-    public int[] layers = new int[] { stateSize, 32, 32, actionSize };
+    public int[] layers = new int[] { stateSize, 128, 128, actionSize };
     public int BatchSize = 64;
     public int totalEpisodes = 50000;
     
     public float epsilon = 1;
     public float epsilonMin = 0.03f;
-    public float epsilonDecay = 0.00005f;
+    public float epsilonDecay = 0.00001f;
     public float decayStep = 0;
 
-    public int targetRefreshRate = 10000;
+    public int targetRefreshRate = 1000;
 
-    public int gateTimeStepThreshold = 200;
-    public float baseReward = -0;
-    public float deathReward = -1;
+    public int gateTimeStepThreshold = 500;
+    public float baseReward = 0;
+    public float deathReward = -3;
     public float gateReward = 10;
 
     public bool learning = true;   
 
-    public Tuple<float[], int, float, float[], bool>[] memory = new Tuple<float[], int, float, float[], bool>[100000];
+    public Tuple<float[], int, float, float[], bool>[] memory = new Tuple<float[], int, float, float[], bool>[50000];
     public int iMemory = 0;
     public bool filledMemory = false;
     
@@ -49,9 +49,11 @@ public class DeepQAgent
         }
         else
         {
-            decayStep = 0;
-            //Network.Load("C:\\Users\\zddng\\Documents\\Monogame\\CarDeepQ\\saves2\\net");
+            //decayStep = 1000000;
+            //Network.Load("C:\\Users\\Administrateur\\Documents\\Monogame\\CarDeepQ\\netManualSave\\");
+
             TargetNetwork = Network.Copy();
+
             //epsilonDecay = (float)Math.Pow(epsilonMin, (double)1 / totalEpisodes);
             //epsilonDecay = (float)1 / (totalEpisodes + 1);
         }
@@ -71,6 +73,9 @@ public class DeepQAgent
 
     public int Act(float[] state)
     {
+        if (!filledMemory)
+            return Rand.NextInt(0, actionSize);
+
         decayStep += 1f;
 
         epsilon = epsilonMin + (1 - epsilonMin) * (float)Math.Exp(-epsilonDecay * decayStep);
@@ -104,6 +109,9 @@ public class DeepQAgent
     //This is where we train the algorithm
     public void Replay()
     {
+        if (!filledMemory)
+            return;
+
         //Create MiniBatch
         int[] miniBatchIndexes = new int[BatchSize];
         for (int i = 0; i < BatchSize; i++)
@@ -154,6 +162,9 @@ public class DeepQAgent
                         max = output[k];
                         argMax = k;
                     }
+
+                if(reward == 20)
+                { }
 
                 target = reward + gamma * TargetNetwork.FeedForward(nextState)[argMax];
             }

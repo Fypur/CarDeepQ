@@ -38,7 +38,7 @@ public class Environment : Entity
         Visible = rendered;
 
         p = new();
-        p.Title("Stuff");
+        p.Title("Reward by episodes");
     }
 
     public override void Update()
@@ -49,7 +49,7 @@ public class Environment : Entity
         int action = agent.Act(state);
         bool done = Car.Update(action);
 
-        done = done || gateTimeStep > agent.gateTimeStepThreshold;        
+        done = done || gateTimeStep > agent.gateTimeStepThreshold || timeStep > 10000;
 
         float reward = agent.baseReward;
         RewardGates[gateIndex].Update();
@@ -91,11 +91,11 @@ public class Environment : Entity
 
         if (done)
         {
-            if(Car.TotalReward >= 39)
+            if(Car.TotalReward >= 100)
                 Console.ForegroundColor = ConsoleColor.Yellow;
-            else if(Car.TotalReward >= 29)
+            else if(Car.TotalReward >= 50)
                 Console.ForegroundColor = ConsoleColor.Green;
-            else if(Car.TotalReward >= 19)
+            else if(Car.TotalReward >= 30)
                 Console.ForegroundColor = ConsoleColor.Blue;
             else
                 Console.ForegroundColor = ConsoleColor.Red;
@@ -129,8 +129,11 @@ public class Environment : Entity
             Car.Reset();
             
             gateIndex = r.Item3;
-            
 
+            if (Main.episode >= 1000 && Main.episode % 1000 == 0)
+            {
+                agent.Network.Save("C:\\Users\\Administrateur\\Documents\\Monogame\\CarDeepQ\\netAutoSave\\");
+            }
             /*if(Main.episode > 100 && Car.TotalReward == agent.deathReward)
                 agent.epsilon += 0.03f;*/
         }
@@ -140,11 +143,10 @@ public class Environment : Entity
         if (Input.GetKeyDown(Keys.L) && Visible)
             agent.Network.Load("/home/f/Documents/CarDeepQ/saves/net3");*/
 
+        if(Input.GetKeyDown(Keys.S))
+            agent.Network.Save("C:\\Users\\Administrateur\\Documents\\Monogame\\CarDeepQ\\netManualSave\\");
         
-        if (Main.episode >= 5000 && Main.episode % 1000 == 0)
-        {
-            agent.Network.Save("C:\\Users\\Administrateur\\Documents\\Monogame\\CarDeepQ\\net32\\");
-        }
+        
         
         
         timeStep++;

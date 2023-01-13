@@ -87,14 +87,14 @@ public class Car : Actor
         int factor = 1;
         Velocity -= Velocity * friction * factor;
 
-        if (action == 0 || action == 3 || action == 4)
-            Velocity += FrontVector * accelSpeed * factor;
-
         if (action == 1 || action == 3)
             Rotation += turnForce * factor;
         
         if (action == 2 || action == 4)
             Rotation -= turnForce * factor;
+
+        if (action == 0 || action == 3 || action == 4)
+            Velocity += FrontVector * accelSpeed * factor;
 
         if(action == 5)
             Velocity -= FrontVector * accelSpeed * factor;
@@ -203,7 +203,7 @@ public class Car : Actor
                 }
 
                 ray.Distance = Vector2.Distance(ray.Begin, ray.EndPoint);
-                distances.Add(Environment.Normalize(ray.Distance, 0, ray.MaxLength));
+                distances.Add(Ease.Reverse(Environment.Normalize(ray.Distance, 0, ray.MaxLength)));
             }
 
             return distances.ToArray();

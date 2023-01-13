@@ -41,6 +41,9 @@ public class Main : Game
         Debug.DebugMode = true;
 
         base.Initialize();
+
+        /*for (int i = 0; i < 10000000; i++)
+            Update(new GameTime(new TimeSpan(0),new TimeSpan(0),true));*/
     }
 
     protected override void LoadContent()

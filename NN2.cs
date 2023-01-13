@@ -23,6 +23,7 @@ namespace ImageRecognition
         public float[][] Biases;
         public float[][][] Weights;
         public float[][][] MovingAverage;
+        public float[][] MovingAverageBiases;
 
         public float LearningRate;
         public static Func<float, float> ActivationHidden = eLU;
@@ -41,6 +42,7 @@ namespace ImageRecognition
             //Init Everything
             Neurons = new float[Layers.Length][];
             Biases = new float[Layers.Length][];
+            MovingAverageBiases = new float[Layers.Length][];
             Weights = new float[Layers.Length][][];
             MovingAverage = new float[Layers.Length][][];
 
@@ -51,12 +53,14 @@ namespace ImageRecognition
             {
                 Neurons[l] = new float[Layers[l]];
                 Biases[l] = new float[Layers[l]];
+                MovingAverageBiases[l] = new float[Layers[l]];
                 Weights[l] = new float[Layers[l]][];
                 MovingAverage[l] = new float[Layers[l]][];
 
                 for(int n = 0; n < Neurons[l].Length; n++)
                 {
                     Biases[l][n] = GaussianRandom(0, 0.5f);
+                    MovingAverageBiases[l][n] = 1;
                     Weights[l][n] = new float[Layers[l - 1]];
                     MovingAverage[l][n] = new float[Layers[l - 1]];
                     float std = (float)Math.Sqrt(2.0 / Layers[l - 1]);
@@ -196,7 +200,9 @@ namespace ImageRecognition
             {
                 for (int n = 0; n < Neurons[l].Length; n++)
                 {
-                    Biases[l][n] += moveBiases[l][n] * LearningRate / inputs.Length;
+                    moveBiases[l][n] /= inputs.Length;
+                    MovingAverageBiases[l][n] = Beta * MovingAverageBiases[l][n] + (1 - Beta) * moveBiases[l][n] * moveBiases[l][n];
+                    Biases[l][n] += moveBiases[l][n] * (LearningRate / (float)Math.Sqrt(MovingAverageBiases[l][n]));
                     for (int prevN = 0; prevN < Neurons[l - 1].Length; prevN++)
                     {
                         moveWeights[l][n][prevN] /= inputs.Length;
@@ -207,7 +213,7 @@ namespace ImageRecognition
             }
 
             totalCost = totalCost / inputs.Length;
-            Console.WriteLine("total Cost : " + totalCost);
+            //Console.WriteLine("total Cost : " + totalCost);
             /*if (totalCost < 1)
             {
                 Main.pointsX.Add(Main.plotDist);
@@ -221,7 +227,7 @@ namespace ImageRecognition
 
             Main.plotDist += 1;*/
 
-            CheckNetwork();
+            //CheckNetwork();
         }
 
 
@@ -336,6 +342,11 @@ namespace ImageRecognition
 
         public void Save(string outputDir)
         {
+            if (Directory.Exists(outputDir.Substring(0, outputDir.Substring(0, outputDir.Length - 2).LastIndexOf('\\'))))
+                Directory.CreateDirectory(outputDir);
+            else
+                throw new Exception("Parent Dir does not exist");
+
             string jsonW = JsonSerializer.Serialize(this.Weights);
             string jsonB = JsonSerializer.Serialize(this.Biases);
             File.WriteAllText(outputDir + "weights", jsonW);
