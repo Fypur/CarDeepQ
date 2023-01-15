@@ -17,6 +17,7 @@ public class Car : Actor
     private const float friction = 0.1f;
     private const float accelSpeed = 0.66f;
     private const float turnForce = 0.05f;
+    float maxLenx;
 
     public Vector2 respawnPoint;
     public float respawnRot;
@@ -123,7 +124,7 @@ public class Car : Actor
 
     public float[] GetState()
     {
-        float[] state = new float[11];
+        float[] state = new float[14];
         List<Ray> rays = new();
         for (int i = 0; i < 360; i += 45)
             rays.Add(new Ray(MiddlePos, VectorHelper.RotateDeg(FrontVector, i), 150));
@@ -141,6 +142,20 @@ public class Car : Actor
         //state[9] = Environment.Normalize(((BoxColliderRotated)nextGate.Collider).Rotation, 0, (float)Math.PI * 2);
 
         state[10] = Environment.Normalize(Math.Min(Vector2.Distance(MiddlePos, nextGate.MiddlePos), 200), 0, 200);
+        state[11] = Environment.Normalize(((BoxColliderRotated)nextGate.Collider).Rotation, -3.14f, 3.14f);
+
+        int sameDirX = Math.Sign(Vector2.Dot(VectorHelper.Normal(FrontVector), Velocity));
+        float vLenX = VectorHelper.Projection(Velocity, VectorHelper.Normal(FrontVector)).Length() / 2.5f;
+
+        if (vLenX > maxLenx)
+            maxLenx = vLenX;
+
+        Debug.LogUpdate(maxLenx);
+
+        if (sameDirX == 1)
+            state[12] = vLenX;
+        else
+            state[13] = vLenX;
 
         for(int i = 0; i < state.Length; i++)
             if(float.IsNaN(state[i]) || state[i] < -0.1f || state[i] > 1.1f)

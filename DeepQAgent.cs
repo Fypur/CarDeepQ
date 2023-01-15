@@ -8,11 +8,11 @@ namespace CarDeepQ;
 //Helped heavily by https://github.com/the-deep-learners/TensorFlow-LiveLessons/blob/master/notebooks/cartpole_dqn.ipynb
 public class DeepQAgent
 {
-    public float learningRate = 0.01f;
+    public float learningRate = 0.001f;
     public float gamma = 0.96f;
-    public const int stateSize = 11;
+    public const int stateSize = 14;
     public const int actionSize = 6;
-    public int[] layers = new int[] { stateSize, 128, 128, actionSize };
+    public int[] layers = new int[] { stateSize, 64, 64, actionSize };
     public int BatchSize = 64;
     public int totalEpisodes = 50000;
     
