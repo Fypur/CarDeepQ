@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using Fiourp;
-using ImageRecognition;
 
 namespace CarDeepQ;
 
@@ -9,28 +8,28 @@ namespace CarDeepQ;
 public class DeepQAgent
 {
     public float learningRate = 0.001f;
-    public float gamma = 0.96f;
+    public float gamma = 0.95f;
     public const int stateSize = 14;
     public const int actionSize = 6;
-    public int[] layers = new int[] { stateSize, 64, 64, actionSize };
+    public int[] layers = new int[] { stateSize, 32, 32, 32, actionSize };
     public int BatchSize = 64;
     public int totalEpisodes = 50000;
     
     public float epsilon = 1;
     public float epsilonMin = 0.03f;
-    public float epsilonDecay = 0.00001f;
+    public float epsilonDecay = 0.0001f;
     public float decayStep = 0;
 
-    public int targetRefreshRate = 1000;
+    public int targetRefreshRate = 10000;
 
     public int gateTimeStepThreshold = 500;
     public float baseReward = 0;
-    public float deathReward = -3;
+    public float deathReward = -1;
     public float gateReward = 10;
 
     public bool learning = true;   
 
-    public Tuple<float[], int, float, float[], bool>[] memory = new Tuple<float[], int, float, float[], bool>[50000];
+    public Tuple<float[], int, float, float[], bool>[] memory = new Tuple<float[], int, float, float[], bool>[100000];
     public int iMemory = 0;
     public bool filledMemory = false;
     
@@ -177,10 +176,6 @@ public class DeepQAgent
         }
 
         Network.Train(inputs, targets);
-
-        if (epsilon > epsilonMin)
-            epsilon *= epsilonDecay;
-        //epsilonDecay *= 1.001f;
     }
 
     public void RefreshTargetNetwork()

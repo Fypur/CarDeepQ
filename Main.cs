@@ -31,6 +31,30 @@ public class Main : Game
 
        _graphics.SynchronizeWithVerticalRetrace = false;
         IsFixedTimeStep = false;
+
+        var n2 = new NN2(new int[] { 10, 20, 10, 10 }, 0.01f);
+        var n = new NN3(new int[] { 10, 20, 10, 10 }, 0.01f, n2.Weights, n2.Biases);
+
+        //var o2 = n.FeedForward(new float[10] { 1, 1, 1, 0, 0, 0, 0, 0, 0, 0 });
+
+        float[][] input = new float[][]
+        {
+            new float[10] { 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f },
+            new float[10] { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
+            new float[10] { 0.1f, 0.1f, 0.1f, 0.1f, 0.1f, 0.1f, 0.1f, 0.1f, 0.1f, 0.1f },
+            new float[10] { 0.1f, 0.1f, 0.1f, 0.1f, 0.1f, 0.1f, 0.1f, 0.1f, 0.1f, 0.1f },
+        };
+
+        float[][] target = new float[][]
+        {
+            new float[10] { 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f },
+            new float[10] { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
+            new float[10] { 0.1f, 0.1f, 0.1f, 0.1f, 0.1f, 0.1f, 0.1f, 0.1f, 0.1f, 0.1f },
+            new float[10] { 0.1f, 0.1f, 0.1f, 0.1f, 0.1f, 0.1f, 0.1f, 0.1f, 0.1f, 0.1f },
+        };
+
+        n2.Train(input, target);
+        n.Train(input, target);
     }
 
     protected override void Initialize()

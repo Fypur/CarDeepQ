@@ -11,8 +11,9 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using ILGPU;
 
-namespace ImageRecognition
+namespace CarDeepQ
 {
     public class NN2
     {
@@ -229,7 +230,6 @@ namespace ImageRecognition
 
             //CheckNetwork();
         }
-
 
         public void CheckNetwork()
         {

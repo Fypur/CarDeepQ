@@ -17,7 +17,6 @@ public class Car : Actor
     private const float friction = 0.1f;
     private const float accelSpeed = 0.66f;
     private const float turnForce = 0.05f;
-    float maxLenx;
 
     public Vector2 respawnPoint;
     public float respawnRot;
@@ -146,11 +145,6 @@ public class Car : Actor
 
         int sameDirX = Math.Sign(Vector2.Dot(VectorHelper.Normal(FrontVector), Velocity));
         float vLenX = VectorHelper.Projection(Velocity, VectorHelper.Normal(FrontVector)).Length() / 2.5f;
-
-        if (vLenX > maxLenx)
-            maxLenx = vLenX;
-
-        Debug.LogUpdate(maxLenx);
 
         if (sameDirX == 1)
             state[12] = vLenX;

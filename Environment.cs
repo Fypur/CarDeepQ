@@ -48,8 +48,9 @@ public class Environment : Entity
         float[] state = Car.GetState();
         int action = agent.Act(state);
         bool done = Car.Update(action);
+        Debug.LogUpdate(state[11]);
 
-        done = done || gateTimeStep > agent.gateTimeStepThreshold || timeStep > 10000;
+        done = done || timeStep > 5000; // || gateTimeStep > agent.gateTimeStepThreshold
 
         float reward = agent.baseReward;
         RewardGates[gateIndex].Update();
@@ -89,6 +90,9 @@ public class Environment : Entity
         if(agent.learning)
             agent.Remember(state, action, reward, nextState, done);
 
+        if (agent.learning && (agent.filledMemory || agent.iMemory > agent.BatchSize))
+            agent.Replay();
+
         if (done)
         {
             if(Car.TotalReward >= 100)
@@ -118,10 +122,6 @@ public class Environment : Entity
             timeStep = 0;
             gateTimeStep = 0;
 
-
-            if(agent.learning && (agent.filledMemory || agent.iMemory > agent.BatchSize))
-                agent.Replay();
-
             var r = RespawnPoints[Rand.NextInt(0, RespawnPoints.Length)];
             Car.respawnPoint = r.Item1;
             Car.respawnRot = r.Item2; // + Rand.NextFloat(-0.7f, 0.7f);
@@ -132,7 +132,7 @@ public class Environment : Entity
 
             if (Main.episode >= 1000 && Main.episode % 1000 == 0)
             {
-                agent.Network.Save("C:\\Users\\zddng\\Documents\\Monogame\\CarDeepQ\\netAutoSave\\");
+                agent.Network.Save("C:\\Users\\Administrateur\\Documents\\Monogame\\CarDeepQ\\netAutoSave\\");
             }
             /*if(Main.episode > 100 && Car.TotalReward == agent.deathReward)
                 agent.epsilon += 0.03f;*/
@@ -144,7 +144,7 @@ public class Environment : Entity
             agent.Network.Load("/home/f/Documents/CarDeepQ/saves/net3");*/
 
         if(Input.GetKeyDown(Keys.S))
-            agent.Network.Save("C:\\Users\\zddng\\Documents\\Monogame\\CarDeepQ\\netManualSave\\");
+            agent.Network.Save("C:\\Users\\Administrateur\\Documents\\Monogame\\CarDeepQ\\netManualSave\\");
         
         
         
