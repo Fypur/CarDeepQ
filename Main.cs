@@ -33,7 +33,10 @@ public class Main : Game
         IsFixedTimeStep = false;
 
         var n2 = new NN2(new int[] { 10, 20, 10, 10 }, 0.01f);
-        var n = new NN3(new int[] { 10, 20, 10, 10 }, 0.01f, n2.Weights, n2.Biases);
+        var n = new NN3(new int[] { 10, 20, 10, 10 }, 0.01f);
+
+        n2.Load("C:\\Users\\zddng\\Documents\\Monogame\\CarDeepQ\\net32");
+        n.Load("C:\\Users\\zddng\\Documents\\Monogame\\CarDeepQ\\net32");
 
         //var o2 = n.FeedForward(new float[10] { 1, 1, 1, 0, 0, 0, 0, 0, 0, 0 });
 
@@ -52,6 +55,9 @@ public class Main : Game
             new float[10] { 0.1f, 0.1f, 0.1f, 0.1f, 0.1f, 0.1f, 0.1f, 0.1f, 0.1f, 0.1f },
             new float[10] { 0.1f, 0.1f, 0.1f, 0.1f, 0.1f, 0.1f, 0.1f, 0.1f, 0.1f, 0.1f },
         };
+
+        var o2 = n2.FeedForward(input[0]);
+        var o = n.FeedForward(input[0]);
 
         n2.Train(input, target);
         n.Train(input, target);

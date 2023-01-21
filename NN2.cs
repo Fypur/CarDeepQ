@@ -27,8 +27,8 @@ namespace CarDeepQ
         public float[][] MovingAverageBiases;
 
         public float LearningRate;
-        public static Func<float, float> ActivationHidden = eLU;
-        public static Func<float, float> ActivationOut = Linear;
+        public static Func<float, float> ActivationHidden = ReLU;
+        public static Func<float, float> ActivationOut = ReLU;
 
         public static Func<float, float> ActivationHiddenDer = Derivatives(ActivationHidden);
         public static Func<float, float> ActivationOutDer = Derivatives(ActivationOut);
@@ -42,6 +42,7 @@ namespace CarDeepQ
 
             //Init Everything
             Neurons = new float[Layers.Length][];
+            Z = new float[Layers.Length][];
             Biases = new float[Layers.Length][];
             MovingAverageBiases = new float[Layers.Length][];
             Weights = new float[Layers.Length][][];
@@ -53,6 +54,7 @@ namespace CarDeepQ
             for (int l = 1; l < Layers.Length; l++)
             {
                 Neurons[l] = new float[Layers[l]];
+                Z[l] = new float[Layers[l]];
                 Biases[l] = new float[Layers[l]];
                 MovingAverageBiases[l] = new float[Layers[l]];
                 Weights[l] = new float[Layers[l]][];
@@ -73,8 +75,6 @@ namespace CarDeepQ
                     }
                 }
             }
-
-            Z = (float[][])Neurons.Clone();
         }
 
 

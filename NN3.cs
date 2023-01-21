@@ -34,8 +34,8 @@ namespace CarDeepQ
         public MemoryBuffer1D<float, Stride1D.Dense>[] Intermediate;
 
         public float LearningRate;
-        public static Action<Index1D, ArrayView<float>, ArrayView<float>> ActivationHidden = Kernels.VectoreLU;
-        public static Action<Index1D, ArrayView<float>, ArrayView<float>> ActivationOut = Kernels.VectorLinear;
+        public static Action<Index1D, ArrayView<float>, ArrayView<float>> ActivationHidden = Kernels.VectorReLU;
+        public static Action<Index1D, ArrayView<float>, ArrayView<float>> ActivationOut = Kernels.VectorReLU;
 
         public static Action<Index1D, ArrayView<float>, ArrayView<float>> ActivationHiddenDer = Derivatives(ActivationHidden);
         public static Action<Index1D, ArrayView<float>, ArrayView<float>> ActivationOutDer = Derivatives(ActivationOut);
@@ -98,58 +98,6 @@ namespace CarDeepQ
             }
         }
 
-        public NN3(int[] layers, float learningRate, float[][][] weights, float[][] biases)
-        {
-            Layers = layers;
-            LearningRate = learningRate;
-
-            //Init Everything
-            Neurons = new MemoryBuffer1D<float, Stride1D.Dense>[Layers.Length];
-            Z = new MemoryBuffer1D<float, Stride1D.Dense>[Layers.Length];
-            Biases = new MemoryBuffer1D<float, Stride1D.Dense>[Layers.Length];
-            MovingAverageBiases = new MemoryBuffer1D<float, Stride1D.Dense>[Layers.Length];
-            Intermediate = new MemoryBuffer1D<float, Stride1D.Dense>[Layers.Length];
-
-            Weights = new MemoryBuffer2D<float, Stride2D.DenseX>[Layers.Length];
-            MovingAverage = new MemoryBuffer2D<float, Stride2D.DenseX>[Layers.Length];
-
-            Neurons[0] = Accelerator.Allocate1D(new float[Layers[0]]);
-            Z[0] = Accelerator.Allocate1D(new float[Layers[0]]);
-
-            for (int l = 1; l < Layers.Length; l++)
-            {
-                float std = (float)Math.Sqrt(2.0 / Layers[l - 1]);
-
-                Neurons[l] = Accelerator.Allocate1D(new float[Layers[l]]);
-                Z[l] = Accelerator.Allocate1D(new float[Layers[l]]);
-                Biases[l] = Accelerator.Allocate1D(new float[Layers[l]]);
-
-                Intermediate[l] = Accelerator.Allocate1D(new float[Layers[l]]);
-                MovingAverageBiases[l] = Accelerator.Allocate1D(new float[Layers[l]]);
-
-                Weights[l] = Accelerator.Allocate2DDenseX(new float[Layers[l], Layers[l - 1]]);
-                MovingAverage[l] = Accelerator.Allocate2DDenseX(new float[Layers[l], Layers[l - 1]]);
-
-                float[] biasesN = new float[Layers[l]];
-                float[,] weightsN = new float[Layers[l], Layers[l - 1]];
-
-                //Obligé de faire ça par for loop car random utilisé
-                for (int n = 0; n < Neurons[l].Length; n++)
-                {
-                    biasesN[n] = biases[l][n];
-
-                    for (int prevLayerN = 0; prevLayerN < Neurons[l - 1].Length; prevLayerN++)
-                        weightsN[n, prevLayerN] = weights[l][n][prevLayerN];
-                }
-
-                Biases[l].CopyFromCPU(biasesN);
-                Weights[l].CopyFromCPU(weightsN);
-
-                Kernels.SetValue((Index1D)MovingAverageBiases[l].Length, MovingAverageBiases[l].View, 1);
-                Kernels.SetValue2D(new Index2D(MovingAverage[l].ElementSize, MovingAverage[l].ElementSize), MovingAverage[l], 1);
-            }
-        }
-
 
         public float[] FeedForward(float[] input)
         {
@@ -164,7 +112,6 @@ namespace CarDeepQ
             for (int l = 1; l < Layers.Length; l++)
             {
                 Z[l].MemSetToZero();
-                Kernels.SetValue((int)Z[l].Length, Z[l].View, 0);
                 Kernels.MatrixVectorMult(new Index2D((int)Neurons[l].Length, (int)Neurons[l - 1].Length), Weights[l], Neurons[l - 1].View, Z[l].View);
                 Kernels.VectorAdd(Layers[l], Z[l].View, Biases[l].View, Z[l].View);
 
@@ -198,52 +145,31 @@ namespace CarDeepQ
                 FeedForward(inputs[p]);
                 MemoryBuffer1D<float, Stride1D.Dense> target = Accelerator.Allocate1D(targets[p]);
 
-                //Computing the error
-                //The error is basically the derivative of the cost by the z of that neuron at that place
 
 
                 int lastLayer = Layers.Length - 1;
-                Kernels.VectorSub((int)error[lastLayer].Length, Neurons[lastLayer].View, target.View, error[lastLayer].View);
-                Kernels.VectorMultConstant((int)error[lastLayer].Length, error[lastLayer].View, 2, error[lastLayer].View);
-
                 ActivationOutDer((int)Z[lastLayer - 1].Length, Z[lastLayer].View, Intermediate[lastLayer].View);
-                Kernels.VectorMult((int)error[lastLayer].Length, error[lastLayer].View, Intermediate[lastLayer].View, error[lastLayer].View);
+                Kernels.SetLastLayerError((int)error[lastLayer].Length, Neurons[lastLayer].View, target.View, Intermediate[lastLayer].View, error[lastLayer].View);
+
+
+                /*Kernels.VectorSub((int)error[lastLayer].Length, Neurons[lastLayer].View, target.View, error[lastLayer].View);
+                Kernels.VectorMultConstant((int)error[lastLayer].Length, error[lastLayer].View, 2, error[lastLayer].View);
+                Kernels.VectorMult((int)error[lastLayer].Length, error[lastLayer].View, Intermediate[lastLayer].View, error[lastLayer].View);*/
 
 
                 for (int l = Layers.Length - 1; l >= 2; l--)
                 {
-                    Kernels.MatrixVectorMult(new Index2D((int)Neurons[l].Length, (int)Neurons[l - 1].Length), Weights[l], error[l].View, error[l - 1].View);
+                    Kernels.MatrixVectorMult2(new Index2D((int)Neurons[l].Length, (int)Neurons[l - 1].Length), Weights[l], error[l].View, error[l - 1].View);
 
                     ActivationHiddenDer((int)Z[l - 1].Length, Z[l - 1].View, Intermediate[l - 1].View);
                     Kernels.VectorMult((int)error[l - 1].Length, error[l - 1].View, Intermediate[l - 1].View, error[l - 1].View);
-
-
-                    /*for (int prevN = 0; prevN < Neurons[l - 1].Length; prevN++)
-                    {
-                        for (int n = 0; n < Neurons[l].Length; n++)
-                            error[l - 1][prevN] += error[l][n] * Weights[l][n][prevN];
-
-                        error[l - 1][prevN] *= ActivationHiddenDer(Z[l - 1][prevN]);
-                    }*/
                 }
 
 
                 for (int l = 1; l < Layers.Length; l++)
                 {
                     Kernels.VectorAdd((int)moveBiases[l].Length, moveBiases[l].View, error[l].View, moveBiases[l].View);
-                    Kernels.Matrix2VectorMult(new Index2D(moveWeights[l].ElementSize, moveWeights[l].ElementSize), moveWeights[l].View, error[l].View, Neurons[l - 1].View, moveWeights[l].View);
-
-                    //Kernels.VectorMult((int)error[l].Length, error[l].View, Neurons[l - 1].View, error[l].View);
-
-                    /*for (int n = 0; n < Neurons[l].Length; n++)
-                    {
-                        moveBiases[l][n] -= error[l][n];
-
-                        for (int prevN = 0; prevN < Neurons[l - 1].Length; prevN++)
-                            moveWeights[l][n][prevN] -= error[l][n] * Neurons[l - 1][prevN];
-
-                        //m[i.X, i.Y] += v1[i.X] * v2[i.Y];
-                    }*/
+                    Kernels.MatrixSetVectorSqrdMult(new Index2D(moveWeights[l].ElementSize, moveWeights[l].ElementSize), moveWeights[l].View, error[l].View, Neurons[l - 1].View, moveWeights[l].View);
                 }
 
                 #region cost and plotting
@@ -400,8 +326,29 @@ namespace CarDeepQ
             else
                 throw new Exception("Parent Dir does not exist");
 
-            string jsonW = JsonSerializer.Serialize(this.Weights);
-            string jsonB = JsonSerializer.Serialize(this.Biases);
+            float[][][] w = new float[Weights.Length][][];
+            float[][] b = new float[Biases.Length][];
+
+            for (int l = 1; l < Layers.Length; l++)
+            {
+                b[l] = new float[Biases[l].Length];
+                Biases[l].CopyToCPU(b[l]);
+
+                float[,] w2 = new float[Layers[l], Layers[l - 1]];
+                Weights[l].CopyToCPU(w2);
+
+                w[l] = new float[Layers[l]][];
+                for (int n = 0; n < Layers[l]; n++)
+                {
+                    w[l][n] = new float[Layers[l - 1]];
+                    for (int prevN = 0; prevN < Layers[l - 1]; prevN++)
+                        w[l][n][prevN] = w2[n, prevN];
+
+                }
+            }
+
+            string jsonW = JsonSerializer.Serialize(w);
+            string jsonB = JsonSerializer.Serialize(b);
             File.WriteAllText(outputDir + "weights", jsonW);
             File.WriteAllText(outputDir + "biases", jsonB);
         }
@@ -410,14 +357,21 @@ namespace CarDeepQ
         {
             string jsonW = File.ReadAllText(inputDir + "weights");
             string jsonB = File.ReadAllText(inputDir + "biases");
-            /*NeuralNetwork n = JsonSerializer.Deserialize<NeuralNetwork>(json);
 
-            LearningRate = n.LearningRate;
-            weights = n.weights;
-            biases = n.biases;*/
+            float[][][] w = JsonSerializer.Deserialize<float[][][]>(jsonW);
+            float[][] b = JsonSerializer.Deserialize<float[][]>(jsonB);
 
-            /*Weights = JsonSerializer.Deserialize<float[][][]>(jsonW);
-            Biases = JsonSerializer.Deserialize<float[][]>(jsonB);*/
+            for(int l = 1; l < Layers.Length; l++)
+            {
+                Biases[l].CopyFromCPU(b[l]);
+
+                float[,] w2 = new float[Layers[l], Layers[l - 1]];
+                for (int n = 0; n < Layers[l]; n++)
+                    for (int prevN = 0; prevN < Layers[l - 1]; prevN++)
+                        w2[n, prevN] = w[l][n][prevN];
+
+                Weights[l].CopyFromCPU(w2);
+            }
         }
 
         public NN2 Copy()

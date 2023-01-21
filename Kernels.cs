@@ -40,7 +40,8 @@ namespace CarDeepQ
         public static Action<Index2D, ArrayView2D<float, Stride2D.DenseX>, float> SetValue2D;
 
         public static Action<Index2D, ArrayView2D<float, Stride2D.DenseX>, ArrayView<float>, ArrayView<float>> MatrixVectorMult;
-        public static Action<Index2D, ArrayView2D<float, Stride2D.DenseX>, ArrayView<float>, ArrayView<float>, ArrayView2D<float, Stride2D.DenseX>> Matrix2VectorMult;
+        public static Action<Index2D, ArrayView2D<float, Stride2D.DenseX>, ArrayView<float>, ArrayView<float>> MatrixVectorMult2;
+        public static Action<Index2D, ArrayView2D<float, Stride2D.DenseX>, ArrayView<float>, ArrayView<float>, ArrayView2D<float, Stride2D.DenseX>> MatrixSetVectorSqrdMult;
 
         public static Action<Index2D, ArrayView2D<float, Stride2D.DenseX>, float, ArrayView2D<float, Stride2D.DenseX>> MatrixDivConst;
         public static Action<Index1D, ArrayView1D<float, Stride1D.Dense>, ArrayView1D<float, Stride1D.Dense>, float, ArrayView1D<float, Stride1D.Dense>> SetMovingAverageBiases;
@@ -49,11 +50,13 @@ namespace CarDeepQ
         public static Action<Index2D, ArrayView2D<float, Stride2D.DenseX>, ArrayView2D<float, Stride2D.DenseX>, float, ArrayView2D<float, Stride2D.DenseX>> SetMovingAverage;
         public static Action<Index2D, ArrayView2D<float, Stride2D.DenseX>, ArrayView2D<float, Stride2D.DenseX>, ArrayView2D<float, Stride2D.DenseX>, float, ArrayView2D<float, Stride2D.DenseX>> SetWeightsTrain;
 
+        public static Action<Index1D, ArrayView<float>, ArrayView<float>, ArrayView<float>, ArrayView<float>> SetLastLayerError;
+
 
         static Kernels()
         {
             Context = Context.Create((builder) => builder.EnableAlgorithms());
-            Accelerator = Context.GetPreferredDevice(false).CreateAccelerator(Context);
+            Accelerator = Context.GetPreferredDevice(true).CreateAccelerator(Context);
 
             
             VectorMultConstant = Accelerator.LoadAutoGroupedStreamKernel<Index1D, ArrayView<float>, float, ArrayView<float>>(VectorMultConstKernel);
@@ -79,15 +82,18 @@ namespace CarDeepQ
             SetValue2D = Accelerator.LoadAutoGroupedStreamKernel<Index2D, ArrayView2D<float, Stride2D.DenseX>, float>(SetValue2DKernel);
 
             MatrixVectorMult = Accelerator.LoadAutoGroupedStreamKernel<Index2D, ArrayView2D<float, Stride2D.DenseX>, ArrayView<float>, ArrayView<float>>(MatrixVectorMultKernel);
-            Matrix2VectorMult = Accelerator.LoadAutoGroupedStreamKernel<Index2D, ArrayView2D<float, Stride2D.DenseX>, ArrayView<float>, ArrayView<float>, ArrayView2D<float, Stride2D.DenseX>>(Matrix2VectorMultKernel);
+            MatrixVectorMult2 = Accelerator.LoadAutoGroupedStreamKernel<Index2D, ArrayView2D<float, Stride2D.DenseX>, ArrayView<float>, ArrayView<float>>(MatrixVectorMultKernel2);
+            MatrixSetVectorSqrdMult = Accelerator.LoadAutoGroupedStreamKernel<Index2D, ArrayView2D<float, Stride2D.DenseX>, ArrayView<float>, ArrayView<float>, ArrayView2D<float, Stride2D.DenseX>>(MatrixSetVectorSqrdMultKernel);
 
             MatrixVectorMult = Accelerator.LoadAutoGroupedStreamKernel<Index2D, ArrayView2D<float, Stride2D.DenseX>, ArrayView<float>, ArrayView<float>>(MatrixVectorMultKernel);
-            Matrix2VectorMult = Accelerator.LoadAutoGroupedStreamKernel<Index2D, ArrayView2D<float, Stride2D.DenseX>, ArrayView<float>, ArrayView<float>, ArrayView2D<float, Stride2D.DenseX>>(Matrix2VectorMultKernel);
+            MatrixSetVectorSqrdMult = Accelerator.LoadAutoGroupedStreamKernel<Index2D, ArrayView2D<float, Stride2D.DenseX>, ArrayView<float>, ArrayView<float>, ArrayView2D<float, Stride2D.DenseX>>(MatrixSetVectorSqrdMultKernel);
             MatrixDivConst = Accelerator.LoadAutoGroupedStreamKernel<Index2D, ArrayView2D<float, Stride2D.DenseX>, float, ArrayView2D<float, Stride2D.DenseX>>(MatrixDivConstKernel);
             SetMovingAverageBiases = Accelerator.LoadAutoGroupedStreamKernel<Index1D, ArrayView1D<float, Stride1D.Dense>, ArrayView1D<float, Stride1D.Dense>, float, ArrayView1D<float, Stride1D.Dense>>(SetMovingAverageBiasesKernel);
             SetBiasesTrain = Accelerator.LoadAutoGroupedStreamKernel<Index1D, ArrayView1D<float, Stride1D.Dense>, ArrayView1D<float, Stride1D.Dense>, ArrayView1D<float, Stride1D.Dense>, float, ArrayView1D<float, Stride1D.Dense>>(SetBiasesTrainKernel);
             SetMovingAverage = Accelerator.LoadAutoGroupedStreamKernel<Index2D, ArrayView2D<float, Stride2D.DenseX>, ArrayView2D<float, Stride2D.DenseX>, float, ArrayView2D<float, Stride2D.DenseX>>(SetMovingAverageKernel);
             SetWeightsTrain = Accelerator.LoadAutoGroupedStreamKernel<Index2D, ArrayView2D<float, Stride2D.DenseX>, ArrayView2D<float, Stride2D.DenseX>, ArrayView2D<float, Stride2D.DenseX>, float, ArrayView2D<float, Stride2D.DenseX>>(SetWeightsTrainKernel);
+            
+            SetLastLayerError = Accelerator.LoadAutoGroupedStreamKernel <Index1D, ArrayView<float>, ArrayView<float>, ArrayView<float>, ArrayView<float>>(SetLastLayerErrorKernel);
 
 
             Accelerator.Synchronize();
@@ -132,13 +138,17 @@ namespace CarDeepQ
             => Atomic.Add(ref output[i.X], matrix[i.X, i.Y] * vector[i.Y]);
         //We use Atomic because it solves the problem of multiple threads writing to the same variable
 
+        private static void MatrixVectorMultKernel2(Index2D i, ArrayView2D<float, Stride2D.DenseX> matrix, ArrayView<float> vector, ArrayView<float> output)
+            => Atomic.Add(ref output[i.Y], matrix[i.X, i.Y] * vector[i.X]);
+
+
         private static void VectorApplyFunctionKernel<TFunc>(Index1D i, ArrayView<float> data, ArrayView<float> output) where TFunc : struct, IFloatFunc
         {
             var function = default(TFunc);
             output[i] = function.Apply(data[i]);
         }
 
-        private static void Matrix2VectorMultKernel(Index2D i, ArrayView2D<float, Stride2D.DenseX> matrix, ArrayView<float> vectorX, ArrayView<float> vectorY, ArrayView2D<float, Stride2D.DenseX> output)
+        private static void MatrixSetVectorSqrdMultKernel(Index2D i, ArrayView2D<float, Stride2D.DenseX> matrix, ArrayView<float> vectorX, ArrayView<float> vectorY, ArrayView2D<float, Stride2D.DenseX> output)
             => output[i.X, i.Y] = matrix[i.X, i.Y] + vectorX[i.X] * vectorY[i.Y];
 
 
@@ -162,6 +172,9 @@ namespace CarDeepQ
         public static void SetWeightsTrainKernel(Index2D i, ArrayView2D<float, Stride2D.DenseX> weights, ArrayView2D<float, Stride2D.DenseX> move, ArrayView2D<float, Stride2D.DenseX> movingAverage, float learningRate, ArrayView2D<float, Stride2D.DenseX> output)
            => output[i] = weights[i] - move[i] * learningRate * XMath.Rsqrt(movingAverage[i]);
         //Weights[l][n][prevN] -= moveWeights[l][n][prevN] * (LearningRate / (float)Math.Sqrt(MovingAverage[l][n][prevN]));
+
+        public static void SetLastLayerErrorKernel(Index1D i, ArrayView<float> nnOutput, ArrayView<float> target, ArrayView<float> zFunctionned, ArrayView<float> output)
+            => output[i.X] = 2 * (nnOutput[i] - target[i]) * zFunctionned[i];
 
         public interface IFloatFunc
         {
