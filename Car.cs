@@ -123,37 +123,39 @@ public class Car : Actor
 
     public float[] GetState()
     {
-        float[] state = new float[14];
+        float[] state = new float[15];
         List<Ray> rays = new();
         for (int i = 0; i < 360; i += 45)
-            rays.Add(new Ray(MiddlePos, VectorHelper.RotateDeg(FrontVector, i), 150));
+            rays.Add(new Ray(MiddlePos, VectorHelper.RotateDeg(FrontVector, i), 150)); //Distance to walls
         
         Ray.ShootRays(rays.ToArray()).CopyTo(state, 0);
         float vLen = VectorHelper.Projection(Velocity, FrontVector).Length() / (accelSpeed * 1 / friction);
         int sameDir = Math.Sign(Vector2.Dot(FrontVector, Velocity));
 
         if(sameDir == 1)
-            state[8] = vLen;
+            state[8] = vLen; //Forward Speed
         else
-            state[9] = vLen;
+            state[9] = vLen; //Backwards speed
 
         //Debug.LogUpdate("vlen  " + VectorHelper.Round(VectorHelper.Projection(Velocity, FrontVector)));
         //state[9] = Environment.Normalize(((BoxColliderRotated)nextGate.Collider).Rotation, 0, (float)Math.PI * 2);
 
-        state[10] = Environment.Normalize(Math.Min(Vector2.Distance(MiddlePos, nextGate.MiddlePos), 200), 0, 200);
-        state[11] = Environment.Normalize(((BoxColliderRotated)nextGate.Collider).Rotation, -3.14f, 3.14f);
+        state[10] = Environment.Normalize(Math.Min(Vector2.Distance(MiddlePos, nextGate.MiddlePos), 200), 0, 200); //distance to gate
+        state[11] = Environment.Normalize(((BoxColliderRotated)nextGate.Collider).Rotation, -3.14f, 3.14f); //Rotation of gate
 
         int sameDirX = Math.Sign(Vector2.Dot(VectorHelper.Normal(FrontVector), Velocity));
         float vLenX = VectorHelper.Projection(Velocity, VectorHelper.Normal(FrontVector)).Length() / 2.5f;
 
         if (sameDirX == 1)
-            state[12] = vLenX;
+            state[12] = vLenX; //Right speed
         else
-            state[13] = vLenX;
+            state[13] = vLenX; //Left speed
 
-        for(int i = 0; i < state.Length; i++)
-            if(float.IsNaN(state[i]) || state[i] < -0.1f || state[i] > 1.1f)
-                {}
+        state[14] = Environment.Normalize(VectorHelper.GetAngle(FrontVector, nextGate.MiddleExactPos - MiddleExactPos), -3.14f, 3.14f); //Direction to gate 
+
+        for (int i = 0; i < state.Length; i++)
+            if (float.IsNaN(state[i]) || state[i] < -0.1f || state[i] > 1.1f)
+                throw new Exception("States are not well normalized");
 
         return state;
     }

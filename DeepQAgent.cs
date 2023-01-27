@@ -1,6 +1,8 @@
 using System;
 using System.Linq;
 using Fiourp;
+using ILGPU;
+using ILGPU.Runtime;
 
 namespace CarDeepQ;
 
@@ -9,29 +11,30 @@ public class DeepQAgent
 {
     public float learningRate = 0.001f;
     public float gamma = 0.95f;
-    public const int stateSize = 14;
+    public const int stateSize = 15;
     public const int actionSize = 6;
-    public int[] layers = new int[] { stateSize, 32, 32, 32, actionSize };
+    public int[] layers = new int[] { stateSize, 32, 64, 32, actionSize };
     public int BatchSize = 64;
     public int totalEpisodes = 50000;
     
     public float epsilon = 1;
     public float epsilonMin = 0.03f;
-    public float epsilonDecay = 0.0001f;
+    public float epsilonDecay = 0.0003f;
     public float decayStep = 0;
 
-    public int targetRefreshRate = 10000;
+    public int targetRefreshRate = 1000;
 
     public int gateTimeStepThreshold = 500;
-    public float baseReward = 0;
-    public float deathReward = -1;
+    public float baseReward = -0.01f;
+    public float deathReward = -5;
     public float gateReward = 10;
 
-    public bool learning = true;   
+    public bool learning = true;
 
     public Tuple<float[], int, float, float[], bool>[] memory = new Tuple<float[], int, float, float[], bool>[100000];
     public int iMemory = 0;
     public bool filledMemory = false;
+    private bool saveMemory = true;
     
     public NN2 Network;
     public NN2 TargetNetwork;
@@ -56,11 +59,71 @@ public class DeepQAgent
             //epsilonDecay = (float)Math.Pow(epsilonMin, (double)1 / totalEpisodes);
             //epsilonDecay = (float)1 / (totalEpisodes + 1);
         }
-        
+        if (!saveMemory)
+        {
+            memory = System.Text.Json.JsonSerializer.Deserialize<Tuple<float[], int, float, float[], bool>[]>(System.IO.File.ReadAllText("C:\\Users\\Administrateur\\Documents\\Monogame\\CarDeepQ\\memory"));
+            filledMemory = true;
+        }
+    }
+
+    //This is where we train the algorithm
+    public void Replay()
+    {
+        if (!filledMemory)
+            return;
+
+        Tuple<float[], int, float, float[], bool>[] miniBatch = Sample();
+
+        float[][] inputs = new float[miniBatch.Length][];
+        float[][] targets = new float[miniBatch.Length][];
+        for (int i = 0; i < miniBatch.Length; i++)
+        {
+            Tuple<float[], int, float, float[], bool> info = miniBatch[i];
+            float[] state = info.Item1;
+            int action = info.Item2;
+            float reward = info.Item3;
+            float[] nextState = info.Item4;
+            bool done = info.Item5;
+
+            float target;
+            if (done)
+                target = reward; //if we are on a terminal state
+            else
+            {
+                float[] output = Network.FeedForward(nextState); //for on a non terminal state
+                int argMax = 0;
+                float max = output[0];
+                for (int k = 1; k < output.Length; k++)
+                    if (output[k] > max)
+                    {
+                        max = output[k];
+                        argMax = k;
+                    }
+
+                if (reward == 10)
+                { }
+
+                target = reward + gamma * TargetNetwork.FeedForward(nextState)[argMax];
+            }
+
+            float[] targetF = Network.FeedForward(state);
+            targetF[action] = target;
+
+            inputs[i] = state;
+            targets[i] = targetF;
+        }
+
+        Network.Train(inputs, targets);
     }
 
     public void Remember(float[] state, int action, float reward, float[] nextState, bool done)
     {
+        if (filledMemory && saveMemory)
+        {
+            System.IO.File.WriteAllText("C:\\Users\\Administrateur\\Documents\\Monogame\\CarDeepQ\\memory", System.Text.Json.JsonSerializer.Serialize(memory));
+            saveMemory = false;
+        }
+
         memory[iMemory] = new(state, action, reward, nextState, done);
         iMemory++;
         if (iMemory > memory.Length - 1)
@@ -75,11 +138,16 @@ public class DeepQAgent
         if (!filledMemory)
             return Rand.NextInt(0, actionSize);
 
+        /*string j =System.Text.Json.JsonSerializer.Serialize(memory);
+        System.IO.File.WriteAllText("C:\\Users\\Administrateur\\Documents\\Monogame\\CarDeepQ\\memory", j);*/
+
         decayStep += 1f;
 
         epsilon = epsilonMin + (1 - epsilonMin) * (float)Math.Exp(-epsilonDecay * decayStep);
         //epsilon -= 0.001f;
         var r = Rand.NextDouble();
+        //r = 1;
+        //r = 1;
         if (r < epsilon)
         {
             int r2 = Rand.NextInt(0, actionSize);
@@ -104,14 +172,11 @@ public class DeepQAgent
         //Debug.LogUpdate(argMax);
         return argMax;
     }
-    
-    //This is where we train the algorithm
-    public void Replay()
-    {
-        if (!filledMemory)
-            return;
 
+    public Tuple<float[], int, float, float[], bool>[] Sample()
+    {
         //Create MiniBatch
+        
         int[] miniBatchIndexes = new int[BatchSize];
         for (int i = 0; i < BatchSize; i++)
             miniBatchIndexes[i] = -1;
@@ -120,63 +185,39 @@ public class DeepQAgent
         for (int i = 0; i < BatchSize; i++)
         {
             int r;
-            
+
             void SetR()
             {
-                if(filledMemory)
+                if (filledMemory)
                     r = Rand.NextInt(0, memory.Length);
                 else
                     r = Rand.NextInt(0, iMemory);
             }
-            
-            SetR();
 
+            SetR();
             while (miniBatchIndexes.Contains(r))
                 SetR();
-
             miniBatchIndexes[i] = r;
             miniBatch[i] = memory[r];
         }
 
-        float[][] inputs = new float[miniBatch.Length][];
-        float[][] targets = new float[miniBatch.Length][];
-        for(int i = 0; i < miniBatch.Length; i++)
+        return miniBatch;
+    }
+
+    /*int r = Rand.NextInt(0, memory.Length);
+        int limit =  r + BatchSize;
+        int count = 0;
+        for (int i = r; i < limit; i++)
         {
-            Tuple<float[], int, float, float[], bool> info = miniBatch[i];
-            float[] state = info.Item1;
-            int action = info.Item2;
-            float reward = info.Item3;
-            float[] nextState = info.Item4;
-            bool done = info.Item5;
-
-            float target;
-            if (done)
-                target = reward;
-            else{
-                float[] output = Network.FeedForward(nextState);
-                int argMax = 0;
-                float max = output[0];
-                for(int k = 1; k < output.Length; k++)
-                    if(output[k] > max){
-                        max = output[k];
-                        argMax = k;
-                    }
-
-                if(reward == 20)
-                { }
-
-                target = reward + gamma * TargetNetwork.FeedForward(nextState)[argMax];
+            if(i + 1 > memory.Length)
+            {
+                limit = BatchSize - count;
+                i = 0;
             }
 
-            float[] targetF = Network.FeedForward(state);
-            targetF[action] = target;
-
-            inputs[i] = state;
-            targets[i] = targetF;
-        }
-
-        Network.Train(inputs, targets);
-    }
+            miniBatch[count] = memory[r];
+            count++;
+        }*/
 
     public void RefreshTargetNetwork()
         => TargetNetwork = Network.Copy();

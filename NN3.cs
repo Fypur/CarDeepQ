@@ -34,8 +34,8 @@ namespace CarDeepQ
         public MemoryBuffer1D<float, Stride1D.Dense>[] Intermediate;
 
         public float LearningRate;
-        public static Action<Index1D, ArrayView<float>, ArrayView<float>> ActivationHidden = Kernels.VectorReLU;
-        public static Action<Index1D, ArrayView<float>, ArrayView<float>> ActivationOut = Kernels.VectorReLU;
+        public static Action<Index1D, ArrayView<float>, ArrayView<float>> ActivationHidden = Kernels.VectoreLU;
+        public static Action<Index1D, ArrayView<float>, ArrayView<float>> ActivationOut = Kernels.VectorLinear;
 
         public static Action<Index1D, ArrayView<float>, ArrayView<float>> ActivationHiddenDer = Derivatives(ActivationHidden);
         public static Action<Index1D, ArrayView<float>, ArrayView<float>> ActivationOutDer = Derivatives(ActivationOut);
@@ -43,6 +43,26 @@ namespace CarDeepQ
         public float Beta = 0.9f;
 
         public NN3(int[] layers, float learningRate)
+        {
+            Setup(layers, learningRate, null, null);
+        }
+
+        public NN3(int[] layers, float learningRate, float[][][] weights, float[][] biases)
+        {
+            Setup(layers, learningRate, weights, biases);
+        }
+
+        public NN3(int[] layers, float learningRate, MemoryBuffer2D<float, Stride2D.DenseX>[] weights, MemoryBuffer1D<float, Stride1D.Dense>[] biases)
+        {
+            Layers = layers;
+            LearningRate = learningRate;
+            Weights = weights;
+            Biases = biases;
+            var param = ConvertToJaggedArray();
+            Setup(layers, learningRate, param.Item1, param.Item2);
+        }
+
+        public void Setup(int[] layers, float learningRate, float[][][] weights, float[][] biases)
         {
             Layers = layers;
             LearningRate = learningRate;
@@ -62,7 +82,9 @@ namespace CarDeepQ
             Neurons[0] = Accelerator.Allocate1D(new float[Layers[0]]);
             Z[0] = Accelerator.Allocate1D(new float[Layers[0]]);
 
-            
+            bool randomW = weights == null;
+            bool randomB = biases == null;
+
             for (int l = 1; l < Layers.Length; l++)
             {
                 float std = (float)Math.Sqrt(2.0 / Layers[l - 1]);
@@ -77,17 +99,16 @@ namespace CarDeepQ
                 Weights[l] = Accelerator.Allocate2DDenseX(new float[Layers[l], Layers[l - 1]]);
                 MovingAverage[l] = Accelerator.Allocate2DDenseX(new float[Layers[l], Layers[l - 1]]);
 
-
                 float[] biasesN = new float[Layers[l]];
                 float[,] weightsN = new float[Layers[l], Layers[l - 1]];
 
                 //Obligé de faire ça par for loop car random utilisé
                 for (int n = 0; n < Neurons[l].Length; n++)
                 {
-                    biasesN[n] = GaussianRandom(0, 0.5f);
+                    biasesN[n] = randomB ? GaussianRandom(0, 0.5f) : biases[l][n];
 
                     for (int prevLayerN = 0; prevLayerN < Neurons[l - 1].Length; prevLayerN++)
-                        weightsN[n, prevLayerN] = GaussianRandom(0, std);
+                        weightsN[n, prevLayerN] = randomW ? GaussianRandom(0, std) : weights[l][n][prevLayerN];
                 }
 
                 Biases[l].CopyFromCPU(biasesN);
@@ -129,7 +150,6 @@ namespace CarDeepQ
         {
             MemoryBuffer1D<float, Stride1D.Dense>[] moveBiases = new MemoryBuffer1D<float, Stride1D.Dense>[Biases.Length];
             MemoryBuffer1D<float, Stride1D.Dense>[] error = new MemoryBuffer1D<float, Stride1D.Dense>[Layers.Length];
-
             MemoryBuffer2D<float, Stride2D.DenseX>[] moveWeights = new MemoryBuffer2D<float, Stride2D.DenseX>[Weights.Length];
 
             for (int l = 1; l < Layers.Length; l++)
@@ -140,6 +160,7 @@ namespace CarDeepQ
             }
 
             float totalCost = 0;
+
             for (int p = 0; p < inputs.Length; p++)
             {
                 FeedForward(inputs[p]);
@@ -148,13 +169,8 @@ namespace CarDeepQ
 
 
                 int lastLayer = Layers.Length - 1;
-                ActivationOutDer((int)Z[lastLayer - 1].Length, Z[lastLayer].View, Intermediate[lastLayer].View);
+                ActivationOutDer((int)Z[lastLayer].Length, Z[lastLayer].View, Intermediate[lastLayer].View);
                 Kernels.SetLastLayerError((int)error[lastLayer].Length, Neurons[lastLayer].View, target.View, Intermediate[lastLayer].View, error[lastLayer].View);
-
-
-                /*Kernels.VectorSub((int)error[lastLayer].Length, Neurons[lastLayer].View, target.View, error[lastLayer].View);
-                Kernels.VectorMultConstant((int)error[lastLayer].Length, error[lastLayer].View, 2, error[lastLayer].View);
-                Kernels.VectorMult((int)error[lastLayer].Length, error[lastLayer].View, Intermediate[lastLayer].View, error[lastLayer].View);*/
 
 
                 for (int l = Layers.Length - 1; l >= 2; l--)
@@ -171,38 +187,6 @@ namespace CarDeepQ
                     Kernels.VectorAdd((int)moveBiases[l].Length, moveBiases[l].View, error[l].View, moveBiases[l].View);
                     Kernels.MatrixSetVectorSqrdMult(new Index2D(moveWeights[l].ElementSize, moveWeights[l].ElementSize), moveWeights[l].View, error[l].View, Neurons[l - 1].View, moveWeights[l].View);
                 }
-
-                #region cost and plotting
-                /*float cost = 0;
-                for (int i = 0; i < output.Length; i++)
-                    cost += (float)Math.Pow(output[i] - target[i], 2);
-
-                totalCost += cost;
-
-                int good = 0;
-                for (int i = 0; i < target.Length; i++)
-                    if (target[i] == 1)
-                    {
-                        good = i;
-                        break;
-                    }
-
-                float found = 0;
-                int foundi = 0;
-                for (int i = 0; i < output.Length; i++)
-                    if (found < output[i])
-                    {
-                        found = output[i];
-                        foundi = i;
-                    }
-
-                if (foundi == good)
-                    Console.ForegroundColor = ConsoleColor.Green;
-                else
-                    Console.ForegroundColor = ConsoleColor.Red;
-                //Console.WriteLine("cost: " + cost);
-                Console.ForegroundColor = ConsoleColor.Gray;*/
-                #endregion
             }
 
 
@@ -216,37 +200,16 @@ namespace CarDeepQ
 
                 Kernels.SetMovingAverage(new Index2D(MovingAverage[l].ElementSize, MovingAverage[l].ElementSize), MovingAverage[l].View, moveWeights[l].View, Beta, MovingAverage[l].View);
                 Kernels.SetWeightsTrain(new Index2D(Weights[l].ElementSize, Weights[l].ElementSize), Weights[l].View, moveWeights[l].View, MovingAverage[l].View, LearningRate, Weights[l].View);
-
-
-                /*//MovingAverageBiases[l][n] = Beta * MovingAverageBiases[l][n] + (1 - Beta) * moveBiases[l][n] * moveBiases[l][n];
-                Kernels.VectorMult((int)moveBiases[l].Length, moveBiases[l].View, moveBiases[l].View, Intermediate[l].View);
-                Kernels.VectorMultConstant((int)Intermediate[l].Length, Intermediate[l].View, 1 - Beta, Intermediate[l].View);
-                Kernels.VectorMultConstant((int)MovingAverageBiases[l].Length, MovingAverageBiases[l].View, Beta, MovingAverageBiases[l].View);
-                Kernels.VectorAdd((int)MovingAverageBiases[l].Length, MovingAverageBiases[l].View, Intermediate[l].View, MovingAverageBiases[l].View);
-
-                //Biases[l][n] -= moveBiases[l][n] * (LearningRate / (float)Math.Sqrt(MovingAverageBiases[l][n]));
-                Kernels.VectorInverseSqrt((int)MovingAverageBiases[l].Length, MovingAverageBiases[l].View, Intermediate[l].View);
-                Kernels.VectorMultConstant((int)Intermediate[l].Length, Intermediate[l].View, -LearningRate, Intermediate[l].View);
-                Kernels.VectorMult((int)moveBiases[l].Length, moveBiases[l].View, Intermediate[l].View, Intermediate[l].View);
-                Kernels.VectorAdd((int)Biases[l].Length, Biases[l].View, Intermediate[l].View, Biases[l].View);*/
             }
 
             totalCost = totalCost / inputs.Length;
-            //Console.WriteLine("total Cost : " + totalCost);
-            /*if (totalCost < 1)
-            {
-                Main.pointsX.Add(Main.plotDist);
-                Main.pointsY.Add(totalCost);
-            }
-            else
-            {
-                Main.pointsX.Add(Main.plotDist);
-                Main.pointsY.Add(1);
-            }
 
-            Main.plotDist += 1;*/
-
-            //CheckNetwork();
+            for (int l = 1; l < Layers.Length; l++)
+            {
+                error[l].Dispose();
+                moveBiases[l].Dispose();
+                moveWeights[l].Dispose();
+            }
         }
 
         /*public void CheckNetwork()
@@ -326,26 +289,9 @@ namespace CarDeepQ
             else
                 throw new Exception("Parent Dir does not exist");
 
-            float[][][] w = new float[Weights.Length][][];
-            float[][] b = new float[Biases.Length][];
-
-            for (int l = 1; l < Layers.Length; l++)
-            {
-                b[l] = new float[Biases[l].Length];
-                Biases[l].CopyToCPU(b[l]);
-
-                float[,] w2 = new float[Layers[l], Layers[l - 1]];
-                Weights[l].CopyToCPU(w2);
-
-                w[l] = new float[Layers[l]][];
-                for (int n = 0; n < Layers[l]; n++)
-                {
-                    w[l][n] = new float[Layers[l - 1]];
-                    for (int prevN = 0; prevN < Layers[l - 1]; prevN++)
-                        w[l][n][prevN] = w2[n, prevN];
-
-                }
-            }
+            var param = ConvertToJaggedArray();
+            float[][][] w = param.Item1;
+            float[][] b = param.Item2;
 
             string jsonW = JsonSerializer.Serialize(w);
             string jsonB = JsonSerializer.Serialize(b);
@@ -374,10 +320,36 @@ namespace CarDeepQ
             }
         }
 
-        public NN2 Copy()
+        public NN3 Copy()
         {
-            NN2 n = new NN2(Layers, LearningRate) { Weights = (float[][][])this.Weights.Clone(), Biases = (float[][])this.Biases.Clone() };
+            NN3 n = new NN3(Layers, LearningRate, Weights, Biases);
             return n;
+        }
+
+        public Tuple<float[][][], float[][]> ConvertToJaggedArray()
+        {
+            float[][][] w = new float[Weights.Length][][];
+            float[][] b = new float[Biases.Length][];
+
+            for (int l = 1; l < Layers.Length; l++)
+            {
+                b[l] = new float[Biases[l].Length];
+                Biases[l].CopyToCPU(b[l]);
+
+                float[,] w2 = new float[Layers[l], Layers[l - 1]];
+                Weights[l].CopyToCPU(w2);
+
+                w[l] = new float[Layers[l]][];
+                for (int n = 0; n < Layers[l]; n++)
+                {
+                    w[l][n] = new float[Layers[l - 1]];
+                    for (int prevN = 0; prevN < Layers[l - 1]; prevN++)
+                        w[l][n][prevN] = w2[n, prevN];
+
+                }
+            }
+
+            return new Tuple<float[][][], float[][]>(w, b);
         }
 
         #endregion

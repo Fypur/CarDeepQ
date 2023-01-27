@@ -48,9 +48,8 @@ public class Environment : Entity
         float[] state = Car.GetState();
         int action = agent.Act(state);
         bool done = Car.Update(action);
-        Debug.LogUpdate(state[11]);
 
-        done = done || timeStep > 5000; // || gateTimeStep > agent.gateTimeStepThreshold
+        done = done || timeStep > 7000; // || gateTimeStep > agent.gateTimeStepThreshold
 
         float reward = agent.baseReward;
         RewardGates[gateIndex].Update();
@@ -132,7 +131,7 @@ public class Environment : Entity
 
             if (Main.episode >= 1000 && Main.episode % 1000 == 0)
             {
-                agent.Network.Save("C:\\Users\\Administrateur\\Documents\\Monogame\\CarDeepQ\\netAutoSave\\");
+                agent.Network.Save("C:\\Users\\Administrateur\\Documents\\Monogame\\CarDeepQ\\mode2\\Episode" + Main.episode);
             }
             /*if(Main.episode > 100 && Car.TotalReward == agent.deathReward)
                 agent.epsilon += 0.03f;*/

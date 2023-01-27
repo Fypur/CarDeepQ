@@ -13,50 +13,53 @@ namespace CarDeepQ
     public static class Kernels
     {
         public static Context Context;
-        public static Accelerator Accelerator;
+        public static Accelerator Accelerator => Kernels2.Accelerator;
 
-        public static Action<Index1D, ArrayView<float>, float, ArrayView<float>> VectorMultConstant;
-        public static Action<Index1D, ArrayView<float>, float, ArrayView<float>> VectorDivConstant;
-        public static Action<Index1D, ArrayView<float>, float, ArrayView<float>> VectorInverseConst;
-        public static Action<Index1D, ArrayView<float>, ArrayView<float>> VectorInverse;
-        public static Action<Index1D, ArrayView<float>, ArrayView<float>> VectorSqrt;
-        public static Action<Index1D, ArrayView<float>, ArrayView<float>> VectorInverseSqrt;
-
-
-        public static Action<Index1D, ArrayView<float>, ArrayView<float>, ArrayView<float>> VectorMult;
-        public static Action<Index1D, ArrayView<float>, ArrayView<float>, ArrayView<float>> VectorAdd;
-        public static Action<Index1D, ArrayView<float>, ArrayView<float>, ArrayView<float>> VectorSub;
-
-        public static Action<Index1D, ArrayView<float>, ArrayView<float>> VectorSigmoid;
-        public static Action<Index1D, ArrayView<float>, ArrayView<float>> VectorSigmoidPrime;
-        public static Action<Index1D, ArrayView<float>, ArrayView<float>> VectorReLU;
-        public static Action<Index1D, ArrayView<float>, ArrayView<float>> VectorReLUPrime;
-        public static Action<Index1D, ArrayView<float>, ArrayView<float>> VectoreLU;
-        public static Action<Index1D, ArrayView<float>, ArrayView<float>> VectoreLUPrime;
-        public static Action<Index1D, ArrayView<float>, ArrayView<float>> VectorLinear;
-        public static Action<Index1D, ArrayView<float>, ArrayView<float>> VectorLinearPrime;
-
-        public static Action<Index1D, ArrayView<float>, float> SetValue;
-        public static Action<Index2D, ArrayView2D<float, Stride2D.DenseX>, float> SetValue2D;
-
-        public static Action<Index2D, ArrayView2D<float, Stride2D.DenseX>, ArrayView<float>, ArrayView<float>> MatrixVectorMult;
-        public static Action<Index2D, ArrayView2D<float, Stride2D.DenseX>, ArrayView<float>, ArrayView<float>> MatrixVectorMult2;
-        public static Action<Index2D, ArrayView2D<float, Stride2D.DenseX>, ArrayView<float>, ArrayView<float>, ArrayView2D<float, Stride2D.DenseX>> MatrixSetVectorSqrdMult;
-
-        public static Action<Index2D, ArrayView2D<float, Stride2D.DenseX>, float, ArrayView2D<float, Stride2D.DenseX>> MatrixDivConst;
-        public static Action<Index1D, ArrayView1D<float, Stride1D.Dense>, ArrayView1D<float, Stride1D.Dense>, float, ArrayView1D<float, Stride1D.Dense>> SetMovingAverageBiases;
-        public static Action<Index1D, ArrayView1D<float, Stride1D.Dense>, ArrayView1D<float, Stride1D.Dense>, ArrayView1D<float, Stride1D.Dense>, float, ArrayView1D<float, Stride1D.Dense>> SetBiasesTrain;
-
-        public static Action<Index2D, ArrayView2D<float, Stride2D.DenseX>, ArrayView2D<float, Stride2D.DenseX>, float, ArrayView2D<float, Stride2D.DenseX>> SetMovingAverage;
-        public static Action<Index2D, ArrayView2D<float, Stride2D.DenseX>, ArrayView2D<float, Stride2D.DenseX>, ArrayView2D<float, Stride2D.DenseX>, float, ArrayView2D<float, Stride2D.DenseX>> SetWeightsTrain;
+        public static readonly Action<Index1D, ArrayView<float>, float, ArrayView<float>> VectorMultConstant;
+        public static readonly Action<Index1D, ArrayView<float>, float, ArrayView<float>> VectorDivConstant;
+        public static readonly Action<Index1D, ArrayView<float>, float, ArrayView<float>> VectorInverseConst;
+        public static readonly Action<Index1D, ArrayView<float>, ArrayView<float>> VectorInverse;
+        public static readonly Action<Index1D, ArrayView<float>, ArrayView<float>> VectorSqrt;
+        public static readonly Action<Index1D, ArrayView<float>, ArrayView<float>> VectorInverseSqrt;
+                      
+                      
+        public static readonly Action<Index1D, ArrayView<float>, ArrayView<float>, ArrayView<float>> VectorMult;
+        public static readonly Action<Index1D, ArrayView<float>, ArrayView<float>, ArrayView<float>> VectorAdd;
+        public static readonly Action<Index1D, ArrayView<float>, ArrayView<float>, ArrayView<float>> VectorSub;
+                      
+        public static readonly Action<Index1D, ArrayView<float>, ArrayView<float>> VectorSigmoid;
+        public static readonly Action<Index1D, ArrayView<float>, ArrayView<float>> VectorSigmoidPrime;
+        public static readonly Action<Index1D, ArrayView<float>, ArrayView<float>> VectorReLU;
+        public static readonly Action<Index1D, ArrayView<float>, ArrayView<float>> VectorReLUPrime;
+        public static readonly Action<Index1D, ArrayView<float>, ArrayView<float>> VectoreLU;
+        public static readonly Action<Index1D, ArrayView<float>, ArrayView<float>> VectoreLUPrime;
+        public static readonly Action<Index1D, ArrayView<float>, ArrayView<float>> VectorLinear;
+        public static readonly Action<Index1D, ArrayView<float>, ArrayView<float>> VectorLinearPrime;
+                      
+        public static readonly Action<Index1D, ArrayView<float>, float> SetValue;
+        public static readonly Action<Index2D, ArrayView2D<float, Stride2D.DenseX>, float> SetValue2D;
+                      
+        public static readonly Action<Index2D, ArrayView2D<float, Stride2D.DenseX>, ArrayView<float>, ArrayView<float>> MatrixVectorMult;
+        public static readonly Action<Index2D, ArrayView2D<float, Stride2D.DenseX>, ArrayView<float>, ArrayView<float>> MatrixVectorMult2;
+        public static readonly Action<Index2D, ArrayView2D<float, Stride2D.DenseX>, ArrayView<float>, ArrayView<float>, ArrayView2D<float, Stride2D.DenseX>> MatrixSetVectorSqrdMult;
+                      
+        public static readonly Action<Index2D, ArrayView2D<float, Stride2D.DenseX>, float, ArrayView2D<float, Stride2D.DenseX>> MatrixDivConst;
+        public static readonly Action<Index1D, ArrayView1D<float, Stride1D.Dense>, ArrayView1D<float, Stride1D.Dense>, float, ArrayView1D<float, Stride1D.Dense>> SetMovingAverageBiases;
+        public static readonly Action<Index1D, ArrayView1D<float, Stride1D.Dense>, ArrayView1D<float, Stride1D.Dense>, ArrayView1D<float, Stride1D.Dense>, float, ArrayView1D<float, Stride1D.Dense>> SetBiasesTrain;
+                      
+        public static readonly Action<Index2D, ArrayView2D<float, Stride2D.DenseX>, ArrayView2D<float, Stride2D.DenseX>, float, ArrayView2D<float, Stride2D.DenseX>> SetMovingAverage;
+        public static readonly Action<Index2D, ArrayView2D<float, Stride2D.DenseX>, ArrayView2D<float, Stride2D.DenseX>, ArrayView2D<float, Stride2D.DenseX>, float, ArrayView2D<float, Stride2D.DenseX>> SetWeightsTrain;
 
         public static Action<Index1D, ArrayView<float>, ArrayView<float>, ArrayView<float>, ArrayView<float>> SetLastLayerError;
 
 
         static Kernels()
         {
-            Context = Context.Create((builder) => builder.EnableAlgorithms());
-            Accelerator = Context.GetPreferredDevice(true).CreateAccelerator(Context);
+            /*Context.CreateDefault();
+            Context = Context.Create(
+                (builder) => { builder.Default(); builder.EnableAlgorithms(); });*/
+            
+            //Accelerator = Context.CreateCudaAccelerator(0);
 
             
             VectorMultConstant = Accelerator.LoadAutoGroupedStreamKernel<Index1D, ArrayView<float>, float, ArrayView<float>>(VectorMultConstKernel);
@@ -73,10 +76,10 @@ namespace CarDeepQ
             VectorSigmoidPrime = Accelerator.LoadAutoGroupedStreamKernel<Index1D, ArrayView<float>, ArrayView<float>>(VectorApplyFunctionKernel<SigmoidPrime>);
             VectorReLU = Accelerator.LoadAutoGroupedStreamKernel<Index1D, ArrayView<float>, ArrayView<float>>(VectorApplyFunctionKernel<ReLU>);
             VectorReLUPrime = Accelerator.LoadAutoGroupedStreamKernel<Index1D, ArrayView<float>, ArrayView<float>>(VectorApplyFunctionKernel<ReLUPrime>);
-            VectoreLU = Accelerator.LoadAutoGroupedStreamKernel<Index1D, ArrayView<float>, ArrayView<float>>(VectorApplyFunctionKernel<eLU>);
-            VectoreLUPrime = Accelerator.LoadAutoGroupedStreamKernel<Index1D, ArrayView<float>, ArrayView<float>>(VectorApplyFunctionKernel<eLUPrime>);
-            VectorLinear = Accelerator.LoadAutoGroupedStreamKernel<Index1D, ArrayView<float>, ArrayView<float>>(VectorApplyFunctionKernel<Linear>);
-            VectorLinearPrime = Accelerator.LoadAutoGroupedStreamKernel<Index1D, ArrayView<float>, ArrayView<float>>(VectorApplyFunctionKernel<LinearPrime>);
+            VectoreLU = Accelerator.LoadAutoGroupedStreamKernel<Index1D, ArrayView<float>, ArrayView<float>>(VectoreLUKernel);
+            VectoreLUPrime = Accelerator.LoadAutoGroupedStreamKernel<Index1D, ArrayView<float>, ArrayView<float>>(VectoreLUPrimeKernel);
+            VectorLinear = (a, b, c) => { };
+            VectorLinearPrime = (a, b, c) => SetValue(a, b, 1);
 
             SetValue = Accelerator.LoadAutoGroupedStreamKernel<Index1D, ArrayView<float>, float>(SetValueKernel);
             SetValue2D = Accelerator.LoadAutoGroupedStreamKernel<Index2D, ArrayView2D<float, Stride2D.DenseX>, float>(SetValue2DKernel);
@@ -148,6 +151,20 @@ namespace CarDeepQ
             output[i] = function.Apply(data[i]);
         }
 
+        private static void VectoreLUKernel(Index1D i, ArrayView<float> data, ArrayView<float> output)
+        {
+            if (output[i] <= 0)
+                output[i] = (float)(0.1f * (XMath.Exp(output[i]) - 1));
+        }
+
+        private static void VectoreLUPrimeKernel(Index1D i, ArrayView<float> data, ArrayView<float> output)
+        {
+            if (output[i] > 0)
+                output[i] = 1;
+            else
+                output[i] = (float)(0.1f * (XMath.Exp(output[i]) - 1)) + 0.1f;
+        }
+
         private static void MatrixSetVectorSqrdMultKernel(Index2D i, ArrayView2D<float, Stride2D.DenseX> matrix, ArrayView<float> vectorX, ArrayView<float> vectorY, ArrayView2D<float, Stride2D.DenseX> output)
             => output[i.X, i.Y] = matrix[i.X, i.Y] + vectorX[i.X] * vectorY[i.Y];
 
@@ -175,6 +192,33 @@ namespace CarDeepQ
 
         public static void SetLastLayerErrorKernel(Index1D i, ArrayView<float> nnOutput, ArrayView<float> target, ArrayView<float> zFunctionned, ArrayView<float> output)
             => output[i.X] = 2 * (nnOutput[i] - target[i]) * zFunctionned[i];
+
+
+        static readonly float[] layers = new float[5] { 14, 32, 32, 32, 6 };
+        public static void WholeTraining()
+        {
+            
+
+
+
+        }
+
+
+
+
+        /*public static void ForwardLayerEkuKernel(Index2D i, ArrayView<float> input, ArrayView<float> biases, ArrayView2D<float, Stride2D.DenseX> weights, ArrayView<float> outputZ, ArrayView<float> outputNeurons)
+        {
+
+            Atomic.Add(outputZ[i.X], weights[i.X, i.Y] * input[i.X]);
+        }*/
+
+        public static void MatrixMult(ArrayView2D<float, Stride2D.DenseX> matrix, ArrayView<float> vector, ArrayView<float> output)
+        {
+            for(int i = 0; i < matrix.Extent.X; i++)
+            {
+
+            }
+        }
 
         public interface IFloatFunc
         {
