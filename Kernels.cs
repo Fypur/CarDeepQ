@@ -38,6 +38,7 @@ namespace CarDeepQ
                       
         public static readonly Action<Index1D, ArrayView<float>, float> SetValue;
         public static readonly Action<Index2D, ArrayView2D<float, Stride2D.DenseX>, float> SetValue2D;
+        public static readonly Action<Index3D, ArrayView3D<float, Stride3D.DenseXY>, float> SetValue3D;
                       
         public static readonly Action<Index2D, ArrayView2D<float, Stride2D.DenseX>, ArrayView<float>, ArrayView<float>> MatrixVectorMult;
         public static readonly Action<Index2D, ArrayView2D<float, Stride2D.DenseX>, ArrayView<float>, ArrayView<float>> MatrixVectorMult2;
@@ -83,6 +84,7 @@ namespace CarDeepQ
 
             SetValue = Accelerator.LoadAutoGroupedStreamKernel<Index1D, ArrayView<float>, float>(SetValueKernel);
             SetValue2D = Accelerator.LoadAutoGroupedStreamKernel<Index2D, ArrayView2D<float, Stride2D.DenseX>, float>(SetValue2DKernel);
+            SetValue3D = Accelerator.LoadAutoGroupedStreamKernel<Index3D, ArrayView3D<float, Stride3D.DenseXY>, float>(SetValue3DKernel);
 
             MatrixVectorMult = Accelerator.LoadAutoGroupedStreamKernel<Index2D, ArrayView2D<float, Stride2D.DenseX>, ArrayView<float>, ArrayView<float>>(MatrixVectorMultKernel);
             MatrixVectorMult2 = Accelerator.LoadAutoGroupedStreamKernel<Index2D, ArrayView2D<float, Stride2D.DenseX>, ArrayView<float>, ArrayView<float>>(MatrixVectorMultKernel2);
@@ -136,6 +138,9 @@ namespace CarDeepQ
 
         private static void SetValue2DKernel(Index2D i, ArrayView2D<float, Stride2D.DenseX> data, float value)
             => data[i.X, i.Y] = value;
+
+        private static void SetValue3DKernel(Index3D i, ArrayView3D<float, Stride3D.DenseXY> data, float value)
+            => data[i] = value;
 
         private static void MatrixVectorMultKernel(Index2D i, ArrayView2D<float, Stride2D.DenseX> matrix, ArrayView<float> vector, ArrayView<float> output)
             => Atomic.Add(ref output[i.X], matrix[i.X, i.Y] * vector[i.Y]);

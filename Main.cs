@@ -33,6 +33,9 @@ public class Main : Game
        _graphics.SynchronizeWithVerticalRetrace = false;
         IsFixedTimeStep = false;
 
+        var n5 = new NN5(new int[] { 10, 256, 256, 10 }, 0.01f);
+        n5.Train(null, new float[10, 2] { { 1, 1 }, { 1, 1 }, { 1, 1 }, { 1, 1 }, { 1, 1 }, { 1, 1 }, { 1, 1 }, { 1, 1 }, { 1, 1 }, { 1, 1 } });
+
         /*var n2 = new NN2(new int[] { 10, 256, 256, 10 }, 10);
         var n = new NN4(new int[] { 10, 256, 256, 10 }, 10);
 

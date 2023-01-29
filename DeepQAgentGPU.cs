@@ -11,9 +11,9 @@ public class DeepQAgentGPU
 {
     public float learningRate = 0.001f;
     public float gamma = 0.95f;
-    public const int stateSize = 14;
+    public const int stateSize = 15;
     public const int actionSize = 6;
-    public int[] layers = new int[] { stateSize, 256, 256, actionSize };
+    public int[] layers = new int[] { stateSize, 256, 256, 256, actionSize };
     public int BatchSize = 64;
     public int totalEpisodes = 50000;
 
@@ -31,7 +31,7 @@ public class DeepQAgentGPU
 
     public bool learning = true;
 
-    public Tuple<MemoryBuffer1D<float, Stride1D.Dense>, int, float, MemoryBuffer1D<float, Stride1D.Dense>, bool>[] memory = new Tuple<MemoryBuffer1D<float, Stride1D.Dense>, int, float, MemoryBuffer1D<float, Stride1D.Dense>, bool>[100000];
+    public Tuple<MemoryBuffer1D<float, Stride1D.Dense>, int, float, MemoryBuffer1D<float, Stride1D.Dense>, bool>[] memory = new Tuple<MemoryBuffer1D<float, Stride1D.Dense>, int, float, MemoryBuffer1D<float, Stride1D.Dense>, bool>[128];
     public int iMemory = 0;
     public bool filledMemory = false;
 

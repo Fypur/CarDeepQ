@@ -368,8 +368,8 @@ namespace CarDeepQ
             string jsonMB = JsonSerializer.Serialize(this.MovingAverageBiases);
             File.WriteAllText(outputDir + "weights", jsonW);
             File.WriteAllText(outputDir + "biases", jsonB);
-            File.WriteAllText(outputDir + "movingAverage", jsonB);
-            File.WriteAllText(outputDir + "movingAverageBiases", jsonB);
+            File.WriteAllText(outputDir + "movingAverage", jsonM);
+            File.WriteAllText(outputDir + "movingAverageBiases", jsonMB);
         }
 
         public void Load(string inputDir)
