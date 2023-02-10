@@ -35,6 +35,10 @@ namespace CarDeepQ
 
         public float Beta = 0.9f;
 
+        private float[][] error;
+        private float[][][] moveWeights;
+        private float[][] moveBiases;
+
         public NN2(int[] layers, float learningRate)
         {
             Layers = layers;
@@ -50,6 +54,10 @@ namespace CarDeepQ
 
             Neurons[0] = new float[Layers[0]];
 
+            moveBiases = new float[Biases.Length][];
+            moveWeights = new float[Weights.Length][][];
+            error = new float[Layers.Length][];
+
 
             for (int l = 1; l < Layers.Length; l++)
             {
@@ -60,12 +68,21 @@ namespace CarDeepQ
                 Weights[l] = new float[Layers[l]][];
                 MovingAverage[l] = new float[Layers[l]][];
 
-                for(int n = 0; n < Neurons[l].Length; n++)
+                error[l] = new float[Neurons[l].Length];
+                moveBiases[l] = new float[Biases[l].Length];
+                moveWeights[l] = new float[Weights[l].Length][];
+
+                for (int n = 0; n < Neurons[l].Length; n++)
                 {
                     Biases[l][n] = GaussianRandom(0, 0.5f);
+
+
                     MovingAverageBiases[l][n] = 1;
                     Weights[l][n] = new float[Layers[l - 1]];
                     MovingAverage[l][n] = new float[Layers[l - 1]];
+                    moveWeights[l][n] = new float[Weights[l][n].Length];
+
+
                     float std = (float)Math.Sqrt(2.0 / Layers[l - 1]);
 
                     for (int prevLayerN = 0; prevLayerN < Neurons[l - 1].Length; prevLayerN++)
@@ -86,7 +103,8 @@ namespace CarDeepQ
             if (input.Contains(float.NaN))
                 throw new Exception("Input contains NaN values");
 
-            Neurons[0] = (float[])input.Clone();
+            for (int i = 0; i < Neurons[0].Length; i++)
+                Neurons[0][i] = input[i];
 
             for(int l = 1; l < Layers.Length; l++)
             {
@@ -113,26 +131,16 @@ namespace CarDeepQ
                 }//);
             }
 
-            return (float[])Neurons[Layers.Length - 1].Clone();
+            float[] output = new float[Neurons[Layers.Length - 1].Length];
+            for (int i = 0; i < Neurons[Layers.Length - 1].Length; i++)
+                output[i] = Neurons[Layers.Length - 1][i];
+
+            return output;
         }
 
 
         public void Train(float[][] inputs, float[][] targets)
         {
-            float[][] moveBiases = new float[Biases.Length][];
-            float[][][] moveWeights = new float[Weights.Length][][];
-            float[][] error = new float[Layers.Length][];
-
-            for (int l = 1; l < Layers.Length; l++)
-            {
-                error[l] = new float[Neurons[l].Length];
-                moveBiases[l] = new float[Biases[l].Length];
-                moveWeights[l] = new float[Weights[l].Length][];
-
-                for (int i = 0; i < Layers[l]; i++)
-                    moveWeights[l][i] = new float[Weights[l][i].Length];
-            }
-
             float totalCost = 0;
             for (int p = 0; p < inputs.Length; p++)
             {
@@ -218,6 +226,116 @@ namespace CarDeepQ
                     for (int prevN = 0; prevN < Neurons[l - 1].Length; prevN++)
                     {
                         moveWeights[l][n][prevN] /= inputs.Length;
+
+                        MovingAverage[l][n][prevN] = Beta * MovingAverage[l][n][prevN] + (1 - Beta) * moveWeights[l][n][prevN] * moveWeights[l][n][prevN];
+                        Weights[l][n][prevN] += moveWeights[l][n][prevN] * (LearningRate / (float)Math.Sqrt(MovingAverage[l][n][prevN]));
+                    }
+                }
+            }
+
+            totalCost = totalCost / inputs.Length;
+            //Console.WriteLine("total Cost : " + totalCost);
+            /*if (totalCost < 1)
+            {
+                Main.pointsX.Add(Main.plotDist);
+                Main.pointsY.Add(totalCost);
+            }
+            else
+            {
+                Main.pointsX.Add(Main.plotDist);
+                Main.pointsY.Add(1);
+            }
+
+            Main.plotDist += 1;*/
+
+            //CheckNetwork();
+        }
+
+        public void TrainWithError(float[][] errors, float[][] targets)
+        {
+            float totalCost = 0;
+            for (int p = 0; p < errors.Length; p++)
+            {
+                float[] target = targets[p];
+
+                #region cost and plotting
+                float cost = 0;
+                /*for (int i = 0; i < output.Length; i++)
+                    cost += (float)Math.Pow(output[i] - target[i], 2);
+
+                totalCost += cost;*/
+
+                /*int good = 0;
+                for (int i = 0; i < target.Length; i++)
+                    if (target[i] == 1)
+                    {
+                        good = i;
+                        break;
+                    }
+
+                float found = 0;
+                int foundi = 0;
+                for (int i = 0; i < output.Length; i++)
+                    if (found < output[i])
+                    {
+                        found = output[i];
+                        foundi = i;
+                    }
+
+                if (foundi == good)
+                    Console.ForegroundColor = ConsoleColor.Green;
+                else
+                    Console.ForegroundColor = ConsoleColor.Red;
+                //Console.WriteLine("cost: " + cost);
+                Console.ForegroundColor = ConsoleColor.Gray;*/
+                #endregion
+
+                if (cost == 0)
+                    continue;
+
+                //Computing the error
+                //The error is basically the derivative of the cost by the z of that neuron at that place
+                for (int i = 0; i < Layers[Layers.Length - 1]; i++)
+                    error[Neurons.Length - 1][i] = 2 * (target[i] - output[i]) * ActivationOutDer(Z[Layers.Length - 1][i]);
+
+                for (int l = Layers.Length - 1; l >= 2; l--)
+                {
+                    error[l - 1] = new float[Neurons[l - 1].Length];
+                    for (int prevN = 0; prevN < Neurons[l - 1].Length; prevN++)
+                    {
+                        for (int n = 0; n < Neurons[l].Length; n++)
+                            error[l - 1][prevN] += error[l][n] * Weights[l][n][prevN];
+
+                        error[l - 1][prevN] *= ActivationHiddenDer(Z[l - 1][prevN]);
+                    }
+                }
+
+
+                for (int l = 1; l < Layers.Length; l++)
+                {
+                    for (int n = 0; n < Neurons[l].Length; n++)
+                    {
+                        moveBiases[l][n] += error[l][n];
+
+                        for (int prevN = 0; prevN < Neurons[l - 1].Length; prevN++)
+                            moveWeights[l][n][prevN] += error[l][n] * Neurons[l - 1][prevN];
+                    }
+                }
+            }
+
+
+            for (int l = 1; l < Layers.Length; l++)
+            {
+                for (int n = 0; n < Neurons[l].Length; n++)
+                {
+                    moveBiases[l][n] /= errors.Length;
+
+                    MovingAverageBiases[l][n] = Beta * MovingAverageBiases[l][n] + (1 - Beta) * moveBiases[l][n] * moveBiases[l][n];
+                    Biases[l][n] += moveBiases[l][n] * (LearningRate / (float)Math.Sqrt(MovingAverageBiases[l][n]));
+
+                    for (int prevN = 0; prevN < Neurons[l - 1].Length; prevN++)
+                    {
+                        moveWeights[l][n][prevN] /= errors.Length;
 
                         MovingAverage[l][n][prevN] = Beta * MovingAverage[l][n][prevN] + (1 - Beta) * moveWeights[l][n][prevN] * moveWeights[l][n][prevN];
                         Weights[l][n][prevN] += moveWeights[l][n][prevN] * (LearningRate / (float)Math.Sqrt(MovingAverage[l][n][prevN]));
