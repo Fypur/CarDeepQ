@@ -34,7 +34,7 @@ public class DeepQAgent
     public Tuple<float[], int, float, float[], bool>[] memory = new Tuple<float[], int, float, float[], bool>[100000];
     public int iMemory = 0;
     public bool filledMemory = false;
-    private bool saveMemory = true;
+    private bool saveMemory = false;
     
     public NN2 Network;
     public NN2 TargetNetwork;
@@ -120,7 +120,7 @@ public class DeepQAgent
     {
         if (filledMemory && saveMemory)
         {
-            System.IO.File.WriteAllText("C:\\Users\\zddng\\Documents\\Monogame\\CarDeepQ\\memory", System.Text.Json.JsonSerializer.Serialize(memory));
+            System.IO.File.WriteAllText("C:\\Users\\Administrateur\\Documents\\Monogame\\CarDeepQ\\memory", System.Text.Json.JsonSerializer.Serialize(memory));
             saveMemory = false;
         }
 

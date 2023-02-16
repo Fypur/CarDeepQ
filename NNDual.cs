@@ -15,9 +15,11 @@ using ILGPU;
 
 namespace CarDeepQ
 {
-    public class NN2
+    public class NNDual
     {
-        public int[] Layers;
+        public int[] LayersCommon;
+        public int[] LayersValue;
+        public int[] LayersAdvantage;
 
         public float[][] Neurons;
         public float[][] Z;
@@ -39,34 +41,34 @@ namespace CarDeepQ
         private float[][][] moveWeights;
         private float[][] moveBiases;
 
-        public NN2(int[] layers, float learningRate)
+        public NNDual(int[] layers, float learningRate)
         {
-            Layers = layers;
+            LayersCommon = layers;
             LearningRate = learningRate;
 
             //Init Everything
-            Neurons = new float[Layers.Length][];
-            Z = new float[Layers.Length][];
-            Biases = new float[Layers.Length][];
-            MovingAverageBiases = new float[Layers.Length][];
-            Weights = new float[Layers.Length][][];
-            MovingAverage = new float[Layers.Length][][];
+            Neurons = new float[LayersCommon.Length][];
+            Z = new float[LayersCommon.Length][];
+            Biases = new float[LayersCommon.Length][];
+            MovingAverageBiases = new float[LayersCommon.Length][];
+            Weights = new float[LayersCommon.Length][][];
+            MovingAverage = new float[LayersCommon.Length][][];
 
-            Neurons[0] = new float[Layers[0]];
+            Neurons[0] = new float[LayersCommon[0]];
 
             moveBiases = new float[Biases.Length][];
             moveWeights = new float[Weights.Length][][];
-            error = new float[Layers.Length][];
+            error = new float[LayersCommon.Length][];
 
 
-            for (int l = 1; l < Layers.Length; l++)
+            for (int l = 1; l < LayersCommon.Length; l++)
             {
-                Neurons[l] = new float[Layers[l]];
-                Z[l] = new float[Layers[l]];
-                Biases[l] = new float[Layers[l]];
-                MovingAverageBiases[l] = new float[Layers[l]];
-                Weights[l] = new float[Layers[l]][];
-                MovingAverage[l] = new float[Layers[l]][];
+                Neurons[l] = new float[LayersCommon[l]];
+                Z[l] = new float[LayersCommon[l]];
+                Biases[l] = new float[LayersCommon[l]];
+                MovingAverageBiases[l] = new float[LayersCommon[l]];
+                Weights[l] = new float[LayersCommon[l]][];
+                MovingAverage[l] = new float[LayersCommon[l]][];
 
                 error[l] = new float[Neurons[l].Length];
                 moveBiases[l] = new float[Biases[l].Length];
@@ -78,12 +80,12 @@ namespace CarDeepQ
 
 
                     MovingAverageBiases[l][n] = 1;
-                    Weights[l][n] = new float[Layers[l - 1]];
-                    MovingAverage[l][n] = new float[Layers[l - 1]];
+                    Weights[l][n] = new float[LayersCommon[l - 1]];
+                    MovingAverage[l][n] = new float[LayersCommon[l - 1]];
                     moveWeights[l][n] = new float[Weights[l][n].Length];
 
 
-                    float std = (float)Math.Sqrt(2.0 / Layers[l - 1]);
+                    float std = (float)Math.Sqrt(2.0 / LayersCommon[l - 1]);
 
                     for (int prevLayerN = 0; prevLayerN < Neurons[l - 1].Length; prevLayerN++)
                     {
@@ -97,7 +99,7 @@ namespace CarDeepQ
 
         public float[] FeedForward(float[] input)
         {
-            if (input.Length != Layers[0])
+            if (input.Length != LayersCommon[0])
                 throw new Exception("Input is not of right size");
 
             if (input.Contains(float.NaN))
@@ -106,7 +108,7 @@ namespace CarDeepQ
             for (int i = 0; i < Neurons[0].Length; i++)
                 Neurons[0][i] = input[i];
 
-            for(int l = 1; l < Layers.Length; l++)
+            for (int l = 1; l < LayersCommon.Length; l++)
             {
                 //Parallel.For(0, Neurons[l].Length, (n) =>
                 for (int n = 0; n < Neurons[l].Length; n++)
@@ -124,16 +126,16 @@ namespace CarDeepQ
                     Z[l][n] += Biases[l][n];
 
 
-                    if (l != Layers.Length - 1)
+                    if (l != LayersCommon.Length - 1)
                         Neurons[l][n] = ActivationHidden(Z[l][n]);
                     else
                         Neurons[l][n] = ActivationOut(Z[l][n]);
                 }//);
             }
 
-            float[] output = new float[Neurons[Layers.Length - 1].Length];
-            for (int i = 0; i < Neurons[Layers.Length - 1].Length; i++)
-                output[i] = Neurons[Layers.Length - 1][i];
+            float[] output = new float[Neurons[LayersCommon.Length - 1].Length];
+            for (int i = 0; i < Neurons[LayersCommon.Length - 1].Length; i++)
+                output[i] = Neurons[LayersCommon.Length - 1][i];
 
             return output;
         }
@@ -185,13 +187,13 @@ namespace CarDeepQ
 
                 //Computing the error
                 //The error is basically the derivative of the cost by the z of that neuron at that place
-                for (int i = 0; i < Layers[Layers.Length - 1]; i++)
-                    error[Neurons.Length - 1][i] = 2 * (target[i] - output[i]) * ActivationOutDer(Z[Layers.Length - 1][i]);
+                for (int i = 0; i < LayersCommon[LayersCommon.Length - 1]; i++)
+                    error[Neurons.Length - 1][i] = 2 * (target[i] - output[i]) * ActivationOutDer(Z[LayersCommon.Length - 1][i]);
 
-                for(int l = Layers.Length - 1; l >= 2; l--)
+                for (int l = LayersCommon.Length - 1; l >= 2; l--)
                 {
                     error[l - 1] = new float[Neurons[l - 1].Length];
-                    for(int prevN = 0; prevN < Neurons[l - 1].Length; prevN++)
+                    for (int prevN = 0; prevN < Neurons[l - 1].Length; prevN++)
                     {
                         for (int n = 0; n < Neurons[l].Length; n++)
                             error[l - 1][prevN] += error[l][n] * Weights[l][n][prevN];
@@ -201,7 +203,7 @@ namespace CarDeepQ
                 }
 
 
-                for (int l = 1; l < Layers.Length; l++)
+                for (int l = 1; l < LayersCommon.Length; l++)
                 {
                     for (int n = 0; n < Neurons[l].Length; n++)
                     {
@@ -214,7 +216,7 @@ namespace CarDeepQ
             }
 
 
-            for (int l = 1; l < Layers.Length; l++)
+            for (int l = 1; l < LayersCommon.Length; l++)
             {
                 for (int n = 0; n < Neurons[l].Length; n++)
                 {
@@ -253,11 +255,11 @@ namespace CarDeepQ
 
         public void CheckNetwork()
         {
-            for (int l = 0; l < Layers.Length; l++)
+            for (int l = 0; l < LayersCommon.Length; l++)
             {
                 Check(Neurons[l]);
 
-                if(l != 0)
+                if (l != 0)
                 {
                     Check(Biases[l]);
 
@@ -399,23 +401,23 @@ namespace CarDeepQ
         public NN2 Copy()
         {
 
-            float[][][] w = new float[Layers.Length][][];
-            float[][] b = new float[Layers.Length][];
+            float[][][] w = new float[LayersCommon.Length][][];
+            float[][] b = new float[LayersCommon.Length][];
 
-            for (int l = 1; l < Layers.Length; l++)
+            for (int l = 1; l < LayersCommon.Length; l++)
             {
                 b[l] = Biases[l];
-                w[l] = new float[Layers[l]][];
+                w[l] = new float[LayersCommon[l]][];
 
-                for (int n = 0; n < Layers[l]; n++)
+                for (int n = 0; n < LayersCommon[l]; n++)
                 {
-                    w[l][n] = new float[Layers[l - 1]];
-                    for (int prevN = 0; prevN < Layers[l - 1]; prevN++)
+                    w[l][n] = new float[LayersCommon[l - 1]];
+                    for (int prevN = 0; prevN < LayersCommon[l - 1]; prevN++)
                         w[l][n][prevN] = Weights[l][n][prevN];
                 }
             }
 
-            NN2 neural = new NN2(Layers, LearningRate);
+            NN2 neural = new NN2(LayersCommon, LearningRate);
             neural.Weights = w;
             neural.Biases = b;
             return neural;

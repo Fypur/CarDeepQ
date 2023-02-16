@@ -131,7 +131,7 @@ public class Environment : Entity
 
             if (Main.episode >= 1000 && Main.episode % 1000 == 0)
             {
-                agent.Network.Save("C:\\Users\\zddng\\Documents\\Monogame\\CarDeepQ\\mode2\\Episode" + Main.episode);
+                agent.Network.Save("C:\\Users\\Administateur\\Documents\\Monogame\\CarDeepQ\\mode2\\Episode" + Main.episode);
             }
             /*if(Main.episode > 100 && Car.TotalReward == agent.deathReward)
                 agent.epsilon += 0.03f;*/
@@ -143,7 +143,7 @@ public class Environment : Entity
             agent.Network.Load("/home/f/Documents/CarDeepQ/saves/net3");*/
 
         if(Input.GetKeyDown(Keys.S))
-            agent.Network.Save("C:\\Users\\zddng\\Documents\\Monogame\\CarDeepQ\\netManualSave\\");
+            agent.Network.Save("C:\\Users\\Administateur\\Documents\\Monogame\\CarDeepQ\\netManualSave\\");
         
         
         

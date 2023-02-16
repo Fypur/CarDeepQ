@@ -89,6 +89,27 @@ public class DDQN
         return QValues;
     }
 
+
+    public float[] FeedForward(float[] input, out float advantageAverage)
+    {
+        input = BaseNetwork.FeedForward(input);
+        float[] advantage = AdvantageNetwork.FeedForward(input);
+        float[] value = ValueNetwork.FeedForward(input);
+
+        float[] QValues = new float[layers[layers.Length - 1]];
+
+        advantageAverage = 0;
+        for (int i = 0; i < QValues.Length; i++)
+            advantageAverage += advantage[i];
+
+        advantageAverage /= advantage.Length;
+
+        for (int i = 0; i < QValues.Length; i++)
+            QValues[i] = value[i] + (advantage[i] - advantageAverage);
+
+        return QValues;
+    }
+
     //This is where we train the algorithm
     public void Replay()
     {
@@ -97,8 +118,15 @@ public class DDQN
 
         Tuple<float[], int, float, float[], bool>[] miniBatch = Sample();
 
+
+
+
+
         float[][] inputs = new float[miniBatch.Length][];
-        float[][] targets = new float[miniBatch.Length][];
+        float[][] advTargets = new float[miniBatch.Length][];
+        float[] vTargets = new float[miniBatch.Length][];
+
+
         for (int i = 0; i < miniBatch.Length; i++)
         {
             Tuple<float[], int, float, float[], bool> info = miniBatch[i];
@@ -108,25 +136,70 @@ public class DDQN
             float[] nextState = info.Item4;
             bool done = info.Item5;
 
+
+            if (done)
+            {
+
+            }
+            else
+            {
+                float[] outputNxtState = FeedForward(nextState);
+
+                float nextStateValue = outputNxtState.Average();
+
+
+                vTargets[i] = reward + nextStateValue;
+
+
+                advTargets[i] = new float[outputNxtState.Length];
+                for(int k = 0; k < outputNxtState.Length; k++)
+                    advTargets[i][k] = outputNxtState[i] - nextStateValue;
+
+                advTargets[i][action] = 
+
+                
+
+
+
+            }
+
+            //Get Advantage targets
+
+
+
+
+            //Get Value Target
+
+
+            //Backprop both
+
+            //Get Error
+
+
+
+
+
+            
+
             float target;
             if (done)
                 target = reward; //if we are on a terminal state
             else
             {
-                float[] output = BaseNetwork.FeedForward(nextState); //for on a non terminal state
-                int argMax = 0;
-                float max = output[0];
-                for (int k = 1; k < output.Length; k++)
-                    if (output[k] > max)
-                    {
-                        max = output[k];
-                        argMax = k;
-                    }
+                float[] output = BaseNetwork.FeedForward(nextState, out float advAntageAverage); //for on a non terminal state
+                
 
                 if (reward != -0.01f)
                 { }
 
                 target = reward + gamma * TargetNetwork.FeedForward(nextState)[argMax];
+
+
+
+
+
+
+
             }
 
             float[] targetF = BaseNetwork.FeedForward(state);
@@ -243,6 +316,20 @@ public class DDQN
             miniBatch[count] = memory[r];
             count++;
         }*/
+
+    public int ArgMax(float[] input)
+    {
+        int argMax = 0;
+        float max = input[0];
+        for (int k = 1; k < input.Length; k++)
+            if (input[k] > max)
+            {
+                max = input[k];
+                argMax = k;
+            }
+
+        return argMax;
+    }
 
     public void RefreshTargetNetwork()
         => TargetNetwork = BaseNetwork.Copy();
