@@ -89,8 +89,7 @@ public class Main : Game
         Engine.CurrentMap = new Map(Vector2.Zero);
         Engine.Cam = new Camera(Vector2.Zero, 0, 1);
         
-        DeepQAgent agent = new DeepQAgent();
-        Engine.CurrentMap.Instantiate(new Environment(agent, true));
+        Engine.CurrentMap.Instantiate(new Environment(new DDQN(), true));
         InstantiateEnvironment();
 
         /*for(int i = 0; i < 3; i++)

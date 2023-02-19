@@ -51,12 +51,14 @@ namespace CarDeepQ
             MovingAverageBiases = new float[Layers.Length][];
             Weights = new float[Layers.Length][][];
             MovingAverage = new float[Layers.Length][][];
+            error = new float[Layers.Length][];
 
             Neurons[0] = new float[Layers[0]];
+            Z[0] = new float[Layers[0]];
+            error[0] = new float[Layers[0]];
 
             moveBiases = new float[Biases.Length][];
             moveWeights = new float[Weights.Length][][];
-            error = new float[Layers.Length][];
 
 
             for (int l = 1; l < Layers.Length; l++)
@@ -249,6 +251,129 @@ namespace CarDeepQ
             Main.plotDist += 1;*/
 
             //CheckNetwork();
+        }
+
+
+        public float[][] TrainWithError(float[][] inputs, float[][] errors)
+        {
+            float totalCost = 0;
+            float[][] returnErr = new float[inputs.Length][];
+
+            for (int p = 0; p < inputs.Length; p++)
+            {
+                float[] input = inputs[p];
+
+                #region cost and plotting
+                float cost = 0;
+                for (int i = 0; i < errors[p].Length; i++)
+                    cost += Math.Abs(errors[p][i]);
+
+                totalCost += cost;
+
+                /*int good = 0;
+                for (int i = 0; i < target.Length; i++)
+                    if (target[i] == 1)
+                    {
+                        good = i;
+                        break;
+                    }
+
+                float found = 0;
+                int foundi = 0;
+                for (int i = 0; i < output.Length; i++)
+                    if (found < output[i])
+                    {
+                        found = output[i];
+                        foundi = i;
+                    }
+
+                if (foundi == good)
+                    Console.ForegroundColor = ConsoleColor.Green;
+                else
+                    Console.ForegroundColor = ConsoleColor.Red;
+                //Console.WriteLine("cost: " + cost);
+                Console.ForegroundColor = ConsoleColor.Gray;*/
+                #endregion
+
+                if (cost == 0)
+                {
+
+                    continue;
+                }
+
+                //Computing the error
+                //The error is basically the derivative of the cost by the z of that neuron at that place
+                for (int i = 0; i < Layers[Layers.Length - 1]; i++)
+                    error[Neurons.Length - 1][i] = errors[p][i] * ActivationOutDer(Z[Layers.Length - 1][i]);
+
+
+                for (int l = Layers.Length - 1; l >= 1; l--)
+                {
+                    error[l - 1] = new float[Neurons[l - 1].Length];
+                    for (int prevN = 0; prevN < Neurons[l - 1].Length; prevN++)
+                    {
+                        for (int n = 0; n < Neurons[l].Length; n++)
+                            error[l - 1][prevN] += error[l][n] * Weights[l][n][prevN];
+
+                        error[l - 1][prevN] *= ActivationHiddenDer(Z[l - 1][prevN]);
+                    }
+                }
+
+
+                for (int l = 1; l < Layers.Length; l++)
+                {
+                    for (int n = 0; n < Neurons[l].Length; n++)
+                    {
+                        moveBiases[l][n] += error[l][n];
+
+                        for (int prevN = 0; prevN < Neurons[l - 1].Length; prevN++)
+                            moveWeights[l][n][prevN] += error[l][n] * Neurons[l - 1][prevN];
+                    }
+                }
+
+                returnErr[p] = new float[Layers[0]];
+                for(int i = 0; i < Layers[0]; i++)
+                    returnErr[p][i] = error[0][i];
+            }
+
+
+            for (int l = 1; l < Layers.Length; l++)
+            {
+                for (int n = 0; n < Neurons[l].Length; n++)
+                {
+                    moveBiases[l][n] /= inputs.Length;
+
+                    MovingAverageBiases[l][n] = Beta * MovingAverageBiases[l][n] + (1 - Beta) * moveBiases[l][n] * moveBiases[l][n];
+                    Biases[l][n] += moveBiases[l][n] * (LearningRate / (float)Math.Sqrt(MovingAverageBiases[l][n]));
+
+                    for (int prevN = 0; prevN < Neurons[l - 1].Length; prevN++)
+                    {
+                        moveWeights[l][n][prevN] /= inputs.Length;
+
+                        MovingAverage[l][n][prevN] = Beta * MovingAverage[l][n][prevN] + (1 - Beta) * moveWeights[l][n][prevN] * moveWeights[l][n][prevN];
+                        Weights[l][n][prevN] += moveWeights[l][n][prevN] * (LearningRate / (float)Math.Sqrt(MovingAverage[l][n][prevN]));
+                    }
+                }
+            }
+
+            totalCost = totalCost / inputs.Length;
+            //Console.WriteLine("total Cost : " + totalCost);
+            /*if (totalCost < 1)
+            {
+                Main.pointsX.Add(Main.plotDist);
+                Main.pointsY.Add(totalCost);
+            }
+            else
+            {
+                Main.pointsX.Add(Main.plotDist);
+                Main.pointsY.Add(1);
+            }
+
+            Main.plotDist += 1;*/
+
+            //CheckNetwork();
+
+            return returnErr;
         }
 
         public void CheckNetwork()

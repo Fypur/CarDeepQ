@@ -13,7 +13,11 @@ public class DDQN
     public float gamma = 0.95f;
     public const int stateSize = 15;
     public const int actionSize = 6;
-    public int[] layers = new int[] { stateSize, 64, 64, 64, actionSize };
+    public const int inBetweenSize = 16;
+
+    public int[] layers = new int[] { stateSize, 64, 64, inBetweenSize };
+    public int[] layersV = new int[] { inBetweenSize, 64, 1 };
+    public int[] layersA = new int[] { inBetweenSize, 64, 64, actionSize };
     public int BatchSize = 64;
     public int totalEpisodes = 50000;
 
@@ -31,7 +35,7 @@ public class DDQN
 
     public bool learning = true;
 
-    public Tuple<float[], int, float, float[], bool>[] memory = new Tuple<float[], int, float, float[], bool>[100000];
+    public Tuple<float[], int, float, float[], bool>[] memory = new Tuple<float[], int, float, float[], bool>[20000];
     public int iMemory = 0;
     public bool filledMemory = false;
     private bool saveMemory = true;
@@ -45,6 +49,10 @@ public class DDQN
     public DDQN()
     {
         BaseNetwork = new NN2(layers, learningRate);
+        AdvantageNetwork = new NN2(layersA, learningRate);
+        ValueNetwork = new NN2(layersV, learningRate);
+
+
         TargetNetwork = BaseNetwork.Copy();
 
         if (!learning)
@@ -75,16 +83,12 @@ public class DDQN
         float[] advantage = AdvantageNetwork.FeedForward(input);
         float[] value = ValueNetwork.FeedForward(input);
 
-        float[] QValues = new float[layers[layers.Length - 1]];
+        float[] QValues = new float[actionSize];
 
-        float advantageAverage = 0;
-        for (int i = 0; i < QValues.Length; i++)
-            advantageAverage += advantage[i];
-
-        advantageAverage /= advantage.Length;
+        float advantageAverage = advantage.Average();
 
         for (int i = 0; i < QValues.Length; i++)
-            QValues[i] = value[i] + (advantage[i] - advantageAverage);
+            QValues[i] = value[0] + (advantage[i] - advantageAverage);
 
         return QValues;
     }
@@ -96,21 +100,17 @@ public class DDQN
         float[] advantage = AdvantageNetwork.FeedForward(input);
         float[] value = ValueNetwork.FeedForward(input);
 
-        float[] QValues = new float[layers[layers.Length - 1]];
+        float[] QValues = new float[actionSize];
 
-        advantageAverage = 0;
-        for (int i = 0; i < QValues.Length; i++)
-            advantageAverage += advantage[i];
-
-        advantageAverage /= advantage.Length;
+        advantageAverage = advantage.Average();
 
         for (int i = 0; i < QValues.Length; i++)
-            QValues[i] = value[i] + (advantage[i] - advantageAverage);
+            QValues[i] = value[0] + (advantage[i] - advantageAverage);
 
         return QValues;
     }
 
-    //This is where we train the algorithm
+    //https://datascience.stackexchange.com/questions/54023/dueling-network-gradient-with-respect-to-advantage-stream
     public void Replay()
     {
         if (!filledMemory)
@@ -118,13 +118,11 @@ public class DDQN
 
         Tuple<float[], int, float, float[], bool>[] miniBatch = Sample();
 
-
-
-
-
         float[][] inputs = new float[miniBatch.Length][];
-        float[][] advTargets = new float[miniBatch.Length][];
-        float[] vTargets = new float[miniBatch.Length][];
+        float[][] inputVA = new float[miniBatch.Length][];
+        float[][] targets = new float[miniBatch.Length][];
+        float[][] vTargets = new float[miniBatch.Length][];
+        float[][] aTargets = new float[miniBatch.Length][];
 
 
         for (int i = 0; i < miniBatch.Length; i++)
@@ -136,81 +134,68 @@ public class DDQN
             float[] nextState = info.Item4;
             bool done = info.Item5;
 
+            float[] output = FeedForward(state);
 
-            if (done)
-            {
-
-            }
-            else
-            {
-                float[] outputNxtState = FeedForward(nextState);
-
-                float nextStateValue = outputNxtState.Average();
-
-
-                vTargets[i] = reward + nextStateValue;
-
-
-                advTargets[i] = new float[outputNxtState.Length];
-                for(int k = 0; k < outputNxtState.Length; k++)
-                    advTargets[i][k] = outputNxtState[i] - nextStateValue;
-
-                advTargets[i][action] = 
-
-                
-
-
-
-            }
-
-            //Get Advantage targets
-
-
-
-
-            //Get Value Target
-
-
-            //Backprop both
-
-            //Get Error
-
-
-
-
-
-            
+            vTargets[i] = new float[1];
 
             float target;
             if (done)
                 target = reward; //if we are on a terminal state
             else
             {
-                float[] output = BaseNetwork.FeedForward(nextState, out float advAntageAverage); //for on a non terminal state
-                
+                float[] outputNxtState = FeedForward(nextState); //for on a non terminal state
+
+                int argMax = ArgMax(outputNxtState);
 
                 if (reward != -0.01f)
                 { }
 
-                target = reward + gamma * TargetNetwork.FeedForward(nextState)[argMax];
-
-
-
-
-
-
-
+                //target = reward + gamma * TargetNetwork.FeedForward(nextState)[argMax];
+                target = reward + gamma * output[argMax];
+                Debug.LogUpdate("TARGET NETWORK DOES NOT WORK YET!!!!!!");
             }
 
-            float[] targetF = BaseNetwork.FeedForward(state);
-            targetF[action] = target;
+            //output[action] = target;
+            inputs[i] = state; //inputs for training Main Base Network
 
-            inputs[i] = state;
-            targets[i] = targetF;
+            inputVA[i] = new float[AdvantageNetwork.Neurons[0].Length];
+            for (int k = 0; k < AdvantageNetwork.Neurons[0].Length; k++)
+                inputVA[i][k] = AdvantageNetwork.Neurons[0][k]; //Inputs for training A and V networks
+
+            targets[i] = output;
+
+            vTargets[i][0] = 2 * (target - output[action]); //V Gradient according to link
+            //delta E over delta Q is equal to 0 except for one action so we don't need a for loop
+
+
+
+            aTargets[i] = new float[output.Length];
+            float scalarB = -(float)1/actionSize * vTargets[i][0]; //Look at link to know what this is
+            for (int k = 0; k < output.Length; k++)
+            {
+                aTargets[i][k] = scalarB; //Advantage Gradient = scalarB + delta E / delta Q which is 0 except for one action
+
+                if(k == action)
+                    aTargets[i][k] += 2 * (target - output[action]);
+            }
+            
         }
 
-        BaseNetwork.Train(inputs, targets);
+        float[][] advError = AdvantageNetwork.TrainWithError(inputVA, aTargets);
+        float[][] valueError = ValueNetwork.TrainWithError(inputVA, vTargets);
+
+        float[][] baseError = new float[miniBatch.Length][];
+
+        /*for (int i = 0; i < miniBatch.Length; i++)
+        {
+            baseError[i] = new float[inBetweenSize];
+            for (int k = 0; k < inBetweenSize; k++)
+                baseError[i][k] = advError[i][k] + valueError[i][k];
+        }
+
+        BaseNetwork.TrainWithError(inputs, baseError);*/
     }
+
 
     public void Remember(float[] state, int action, float reward, float[] nextState, bool done)
     {

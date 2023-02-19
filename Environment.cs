@@ -12,7 +12,7 @@ namespace CarDeepQ;
 public class Environment : Entity
 {
     public Car Car;
-    private DeepQAgent agent;
+    private DDQN agent;
     
     public int timeStep = 0;
     private int targetTimeStep = 0;
@@ -26,7 +26,7 @@ public class Environment : Entity
     public static List<double> pointsX = new();
     public static List<double> pointsY = new();
 
-    public Environment(DeepQAgent agent, bool rendered) : base(Vector2.Zero)
+    public Environment(DDQN agent, bool rendered) : base(Vector2.Zero)
     {
         this.agent = agent;
         Car = new Car(new Vector2(230 * Wall.scale + Wall.offsetX, (1000 - 400) * Wall.scale + Wall.offsetY), (float)(3 * Math.PI / 2));
@@ -131,7 +131,7 @@ public class Environment : Entity
 
             if (Main.episode >= 1000 && Main.episode % 1000 == 0)
             {
-                agent.Network.Save("C:\\Users\\Administateur\\Documents\\Monogame\\CarDeepQ\\mode2\\Episode" + Main.episode);
+                //agent.Network.Save("C:\\Users\\Administateur\\Documents\\Monogame\\CarDeepQ\\mode2\\Episode" + Main.episode);
             }
             /*if(Main.episode > 100 && Car.TotalReward == agent.deathReward)
                 agent.epsilon += 0.03f;*/
@@ -142,8 +142,8 @@ public class Environment : Entity
         if (Input.GetKeyDown(Keys.L) && Visible)
             agent.Network.Load("/home/f/Documents/CarDeepQ/saves/net3");*/
 
-        if(Input.GetKeyDown(Keys.S))
-            agent.Network.Save("C:\\Users\\Administateur\\Documents\\Monogame\\CarDeepQ\\netManualSave\\");
+        //if(Input.GetKeyDown(Keys.S))
+            //agent.Network.Save("C:\\Users\\Administateur\\Documents\\Monogame\\CarDeepQ\\netManualSave\\");
         
         
         
