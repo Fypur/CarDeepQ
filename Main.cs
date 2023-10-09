@@ -19,6 +19,8 @@ public class Main : Game
     private Entity MainGate;
     static RewardGate[] RewardGates;
     static int gateIndex = 0;
+
+    private Environment env;
     
     private System.IO.StreamWriter writer;
     Car car;
@@ -30,7 +32,7 @@ public class Main : Game
         IsMouseVisible = true;
         instance = this;
 
-       _graphics.SynchronizeWithVerticalRetrace = false;
+        _graphics.SynchronizeWithVerticalRetrace = false;
         IsFixedTimeStep = false;
 
         /*var n5 = new NN5(new int[] { 10, 256, 256, 10 }, 0.01f);
@@ -88,15 +90,20 @@ public class Main : Game
 
         Engine.CurrentMap = new Map(Vector2.Zero);
         Engine.Cam = new Camera(Vector2.Zero, 0, 1);
-        
-        Engine.CurrentMap.Instantiate(new Environment(new DDQN(), true));
+
+        var agent = new DeepQAgent();
+        env = (Environment)Engine.CurrentMap.Instantiate(new Environment(agent, true));
+        /*Engine.CurrentMap.Instantiate(new Environment(agent, true));
+        Engine.CurrentMap.Instantiate(new Environment(agent, true));
+        Engine.CurrentMap.Instantiate(new Environment(agent, true));
+        Engine.CurrentMap.Instantiate(new Environment(agent, true));*/
         InstantiateEnvironment();
 
         /*for(int i = 0; i < 3; i++)
             Engine.CurrentMap.Instantiate(new Environment(agent, false));*/
 
         //car = (Car)Engine.CurrentMap.Instantiate(new Car(new Vector2(258 * Wall.scale + Wall.offsetX, (1000 - 288) * Wall.scale + Wall.offsetY), (float)(3 * Math.PI / 2)));
-
+        //car.nextGate = new RewardGate(187, 435, 311, 451);
         /*RewardGates = Environment.InstantiateGates();
         foreach(RewardGate gate in Environment.InstantiateGates())
             Engine.CurrentMap.Instantiate(gate);
@@ -133,8 +140,11 @@ public class Main : Game
             writer.WriteLine($"new Vector2({car.Pos.X}, {car.Pos.Y}), {car.Rotation}f, {gateIndex}f");
         }*/
 
-        
-        Engine.Update(gameTime);
+        //Engine.Update(gameTime);
+        env.Update();
+
+        //for (int i = 0; i < 100; i++)
+            //env.Update();
         /*if(Engine.Deltatime != 0)
             Console.WriteLine(1 / Engine.Deltatime);*/
 
@@ -145,7 +155,9 @@ public class Main : Game
 
     protected override void Draw(GameTime gameTime)
     {
+
         GraphicsDevice.Clear(Color.Black);
+        //return;
         
         GraphicsDevice.SetRenderTarget(Engine.RenderTarget);
         

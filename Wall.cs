@@ -11,7 +11,7 @@ public class Wall : Solid
     public Wall(Vector2 begin, Vector2 end) : base(begin, (int)(begin - end).Length(), 3, new Sprite(Color.White))
     {
         RemoveComponent(base.Collider);
-        Collider = new BoxColliderRotated(Vector2.Zero, Width, 10, (end - begin).ToAngle(), Vector2.Zero);
+        Collider = new BoxColliderRotated(Vector2.Zero, Width, 10, (end - begin).ToAngleDegrees(), Vector2.Zero);
         AddComponent(Collider);
     }
     

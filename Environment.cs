@@ -12,12 +12,12 @@ namespace CarDeepQ;
 public class Environment : Entity
 {
     public Car Car;
-    private DDQN agent;
+    private DeepQAgent agent;
     
     public int timeStep = 0;
     private int targetTimeStep = 0;
     private int gateTimeStep = 0;
-    private static bool respawn1 = true;
+    private static bool respawn1 = false;
 
     public RewardGate[] RewardGates = InstantiateGates();
     public Tuple<Vector2, float, int>[] RespawnPoints = LoadRespawnPoints();
@@ -26,7 +26,7 @@ public class Environment : Entity
     public static List<double> pointsX = new();
     public static List<double> pointsY = new();
 
-    public Environment(DDQN agent, bool rendered) : base(Vector2.Zero)
+    public Environment(DeepQAgent agent, bool rendered) : base(Vector2.Zero)
     {
         this.agent = agent;
         Car = new Car(new Vector2(230 * Wall.scale + Wall.offsetX, (1000 - 400) * Wall.scale + Wall.offsetY), (float)(3 * Math.PI / 2));
@@ -171,7 +171,7 @@ public class Environment : Entity
     }
 
     public static float Normalize(float value, float min, float max)
-        => (value - min) / (max - min);
+        => Math.Clamp((value - min) / (max - min), 0, 1);
 
     public static Tuple<Vector2, float, int>[] LoadRespawnPoints()
     {

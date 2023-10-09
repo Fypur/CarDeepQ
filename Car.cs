@@ -87,7 +87,17 @@ public class Car : Actor
         int factor = 1;
         Velocity -= Velocity * friction * factor;
 
-        if (action == 1 || action == 3)
+        if (action == 1)
+            Rotation += turnForce * factor;
+        
+        if (action == 2)
+            Rotation -= turnForce * factor;
+
+        if (action == 0)
+            Velocity += FrontVector * accelSpeed * factor;
+
+
+        /*if (action == 1 || action == 3)
             Rotation += turnForce * factor;
         
         if (action == 2 || action == 4)
@@ -97,8 +107,8 @@ public class Car : Actor
             Velocity += FrontVector * accelSpeed * factor;
 
         if(action == 5)
-            Velocity -= FrontVector * accelSpeed * factor;
-        
+            Velocity -= FrontVector * accelSpeed * factor;*/
+
         while (Rotation > Math.PI * 2)
             Rotation -= (float)Math.PI * 2;
         while (Rotation < 0)
@@ -151,10 +161,13 @@ public class Car : Actor
         else
             state[13] = vLenX; //Left speed
 
-        state[14] = Environment.Normalize(VectorHelper.GetAngle(FrontVector, nextGate.MiddleExactPos - MiddleExactPos), -3.14f, 3.14f); //Direction to gate 
+        float dirGate = Environment.Normalize(VectorHelper.GetAngle(FrontVector, nextGate.MiddleExactPos - MiddleExactPos), -3.14f, 3.14f);
+        if (dirGate > 0.5f) dirGate = -dirGate + 1;
+
+        state[14] = Environment.Normalize(dirGate, 0, 0.5f); //Direction to gate 
 
         for (int i = 0; i < state.Length; i++)
-            if (float.IsNaN(state[i]) || state[i] < -0.1f || state[i] > 1.1f)
+            if (float.IsNaN(state[i]) || state[i] < 0 || state[i] > 1.1f)
                 throw new Exception("States are not well normalized");
 
         return state;
@@ -214,7 +227,8 @@ public class Car : Actor
                 }
 
                 ray.Distance = Vector2.Distance(ray.Begin, ray.EndPoint);
-                distances.Add(Ease.Reverse(Environment.Normalize(ray.Distance, 0, ray.MaxLength)));
+                float v = Ease.Reverse(Environment.Normalize(ray.Distance, 0, ray.MaxLength));
+                distances.Add(Math.Clamp(v, 0, 1));
             }
 
             return distances.ToArray();

@@ -12,7 +12,7 @@ public class RewardGate : Trigger
         : base(begin, (int)(begin - end).Length(), 10, new() { typeof(Car) }, new Sprite(Color.White))
     {
         RemoveComponent(base.Collider);
-        Collider = new BoxColliderRotated(Vector2.Zero, Width, 10, (end - begin).ToAngle(), Vector2.Zero);
+        Collider = new BoxColliderRotated(Vector2.Zero, Width, 10, (end - begin).ToAngleDegrees(), Vector2.Zero);
         AddComponent(Collider);
         Active = false;
     }

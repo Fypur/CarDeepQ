@@ -9,29 +9,29 @@ namespace CarDeepQ;
 //Helped heavily by https://github.com/the-deep-learners/TensorFlow-LiveLessons/blob/master/notebooks/cartpole_dqn.ipynb
 public class DeepQAgent
 {
-    public float learningRate = 0.01f;
-    public float gamma = 0.95f;
+    public float learningRate = 0.001f;
+    public float gamma = 0.99f;
     public const int stateSize = 15;
-    public const int actionSize = 6;
-    public int[] layers = new int[] { stateSize, 64, 64, 64, actionSize };
-    public int BatchSize = 64;
+    public const int actionSize = 3;
+    public int[] layers = new int[] { stateSize, 32, 32, 32, actionSize };
     public int totalEpisodes = 50000;
     
     public float epsilon = 1;
     public float epsilonMin = 0.03f;
-    public float epsilonDecay = 0.0001f;
+    public float epsilonDecay = 0.00007f;
     public float decayStep = 0;
+    public int BatchSize = 64;
 
-    public int targetRefreshRate = 1000;
+    public int targetRefreshRate = 100;
 
     public int gateTimeStepThreshold = 500;
-    public float baseReward = -0.03f;
-    public float deathReward = -5;
-    public float gateReward = 10;
+    public float baseReward = -0.1f;
+    public float deathReward = -10;
+    public float gateReward = 30;
 
     public bool learning = true;
 
-    public Tuple<float[], int, float, float[], bool>[] memory = new Tuple<float[], int, float, float[], bool>[100000];
+    public Tuple<float[], int, float, float[], bool>[] memory = new Tuple<float[], int, float, float[], bool>[10000];
     public int iMemory = 0;
     public bool filledMemory = false;
     private bool saveMemory = false;
@@ -61,8 +61,8 @@ public class DeepQAgent
         }
         if (!saveMemory)
         {
-            memory = System.Text.Json.JsonSerializer.Deserialize<Tuple<float[], int, float, float[], bool>[]>(System.IO.File.ReadAllText("C:\\Users\\zddng\\Documents\\Monogame\\CarDeepQ\\memory"));
-            filledMemory = true;
+            /*memory = System.Text.Json.JsonSerializer.Deserialize<Tuple<float[], int, float, float[], bool>[]>(System.IO.File.ReadAllText("C:\\Users\\Administrateur\\Documents\\Monogame\\CarDeepQ\\memory"));
+            filledMemory = true;*/
         }
     }
 
@@ -103,7 +103,7 @@ public class DeepQAgent
                 if (reward != -0.01f)
                 { }
 
-                target = reward + gamma * TargetNetwork.FeedForward(nextState)[argMax];
+                target = reward + gamma * Network.FeedForward(nextState)[argMax];
             }
 
             float[] targetF = Network.FeedForward(state);

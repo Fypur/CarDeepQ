@@ -1,22 +1,41 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CarDeepQ", "CarDeepQ.csproj", "{F74A9072-1D12-436B-8F7E-665F922F077A}"
+# Visual Studio Version 17
+VisualStudioVersion = 17.2.32616.157
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CarDeepQ", "CarDeepQ.csproj", "{F74A9072-1D12-436B-8F7E-665F922F077A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fiourp", "..\Fiourp\Fiourp.csproj", "{1528AE3A-E3CA-40A5-9DE0-D62C5D7065C0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fiourp", "..\Fiourp\Fiourp.csproj", "{1528AE3A-E3CA-40A5-9DE0-D62C5D7065C0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
 		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{F74A9072-1D12-436B-8F7E-665F922F077A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F74A9072-1D12-436B-8F7E-665F922F077A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F74A9072-1D12-436B-8F7E-665F922F077A}.Debug|x64.ActiveCfg = Debug|x64
+		{F74A9072-1D12-436B-8F7E-665F922F077A}.Debug|x64.Build.0 = Debug|x64
 		{F74A9072-1D12-436B-8F7E-665F922F077A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F74A9072-1D12-436B-8F7E-665F922F077A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1528AE3A-E3CA-40A5-9DE0-D62C5D7065C0}.Release|Any CPU.ActiveCfg = Release|x86
-		{1528AE3A-E3CA-40A5-9DE0-D62C5D7065C0}.Release|Any CPU.Build.0 = Release|x86
+		{F74A9072-1D12-436B-8F7E-665F922F077A}.Release|x64.ActiveCfg = Release|x64
+		{F74A9072-1D12-436B-8F7E-665F922F077A}.Release|x64.Build.0 = Release|x64
 		{1528AE3A-E3CA-40A5-9DE0-D62C5D7065C0}.Debug|Any CPU.ActiveCfg = Debug|x64
 		{1528AE3A-E3CA-40A5-9DE0-D62C5D7065C0}.Debug|Any CPU.Build.0 = Debug|x64
+		{1528AE3A-E3CA-40A5-9DE0-D62C5D7065C0}.Debug|x64.ActiveCfg = Debug|x64
+		{1528AE3A-E3CA-40A5-9DE0-D62C5D7065C0}.Debug|x64.Build.0 = Debug|x64
+		{1528AE3A-E3CA-40A5-9DE0-D62C5D7065C0}.Release|Any CPU.ActiveCfg = Release|x86
+		{1528AE3A-E3CA-40A5-9DE0-D62C5D7065C0}.Release|Any CPU.Build.0 = Release|x86
+		{1528AE3A-E3CA-40A5-9DE0-D62C5D7065C0}.Release|x64.ActiveCfg = Release|x64
+		{1528AE3A-E3CA-40A5-9DE0-D62C5D7065C0}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {64C74C03-5E70-4FF7-857C-5F8B6699571C}
 	EndGlobalSection
 EndGlobal

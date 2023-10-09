@@ -1,209 +1,209 @@
-﻿/*using System;
-using System.Linq;
-using Fiourp;
-using NeuralNetworkNET;
-using NeuralNetworkNET.APIs;
-using NeuralNetworkNET.APIs.Enums;
-using NeuralNetworkNET.APIs.Interfaces;
-using NeuralNetworkNET.APIs.Interfaces.Data;
-using NeuralNetworkNET.APIs.Structs;
+﻿//using System;
+//using System.Collections;
+//using System.Linq;
+//using Fiourp;
+//using NeuralNetworkNET;
+//using NeuralNetworkNET.APIs;
+//using NeuralNetworkNET.APIs.Enums;
+//using NeuralNetworkNET.APIs.Interfaces;
+//using NeuralNetworkNET.APIs.Interfaces.Data;
+//using NeuralNetworkNET.APIs.Structs;
 
-namespace CarDeepQ;
+//namespace CarDeepQ;
 
-//Helped heavily by https://github.com/the-deep-learners/TensorFlow-LiveLessons/blob/master/notebooks/cartpole_dqn.ipynb
-public class DeepQAgentTensorflow
-{
-    public float learningRate = 0.001f;
-    public float gamma = 0.95f;
-    public const int stateSize = 14;
-    public const int actionSize = 6;
-    public int[] layers = new int[] { stateSize, 32, 32, 32, actionSize };
-    public int BatchSize = 64;
-    public int totalEpisodes = 50000;
+////Helped heavily by https://github.com/the-deep-learners/TensorFlow-LiveLessons/blob/master/notebooks/cartpole_dqn.ipynb
+//public class DeepQAgentTensorflow
+//{
+//    public float learningRate = 0.001f;
+//    public float gamma = 0.95f;
+//    public const int stateSize = 14;
+//    public const int actionSize = 6;
+//    public int[] layers = new int[] { stateSize, 32, 32, 32, actionSize };
+//    public int BatchSize = 64;
+//    public int totalEpisodes = 50000;
 
-    public float epsilon = 1;
-    public float epsilonMin = 0.03f;
-    public float epsilonDecay = 0.0001f;
-    public float decayStep = 0;
+//    public float epsilon = 1;
+//    public float epsilonMin = 0.03f;
+//    public float epsilonDecay = 0.0001f;
+//    public float decayStep = 0;
 
-    public int targetRefreshRate = 10000;
+//    public int targetRefreshRate = 10000;
 
-    public int gateTimeStepThreshold = 500;
-    public float baseReward = 0;
-    public float deathReward = -1;
-    public float gateReward = 10;
+//    public int gateTimeStepThreshold = 500;
+//    public float baseReward = 0;
+//    public float deathReward = -1;
+//    public float gateReward = 10;
 
-    public bool learning = true;
+//    public bool learning = true;
 
-    public Tuple<float[], int, float, float[], bool>[] memory = new Tuple<float[], int, float, float[], bool>[100000];
-    public int iMemory = 0;
-    public bool filledMemory = false;
+//    public Tuple<float[], int, float, float[], bool>[] memory = new Tuple<float[], int, float, float[], bool>[100000];
+//    public int iMemory = 0;
+//    public bool filledMemory = false;
 
-    public INeuralNetwork Network;
-    public INeuralNetwork TargetNetwork;
+//    public INeuralNetwork Network;
+//    public INeuralNetwork TargetNetwork;
 
-    public DeepQAgentTensorflow()
-    {
-        Network = NetworkManager.NewSequential(TensorInfo.Linear(stateSize),
-                        NetworkLayers.FullyConnected(layers[1], ActivationType.ELU),
-                        NetworkLayers.FullyConnected(layers[2], ActivationType.ELU),
-                        NetworkLayers.FullyConnected(layers[3], ActivationType.ELU),
-                        NetworkLayers.FullyConnected(layers[4], ActivationType.Identity));
+//    public DeepQAgentTensorflow()
+//    {
+//        Network = NetworkManager.NewSequential(TensorInfo.Linear(stateSize),
+//                        NetworkLayers.FullyConnected(layers[1], ActivationType.ELU),
+//                        NetworkLayers.FullyConnected(layers[2], ActivationType.ELU),
+//                        NetworkLayers.FullyConnected(layers[3], ActivationType.ELU),
+//                        NetworkLayers.FullyConnected(layers[4], ActivationType.Identity));
 
-        TargetNetwork = Network;
+//        TargetNetwork = Network.Clone();
 
-        if (!learning)
-        {
-            epsilon = 0;
-            epsilonDecay = 1;
-        }
-        else
-        {
-            //decayStep = 1000000;
-            //Network.Load("C:\\Users\\Administrateur\\Documents\\Monogame\\CarDeepQ\\netManualSave\\");
 
-            //TargetNetwork = Network.Copy();
+//        if (!learning)
+//        {
+//            epsilon = 0;
+//            epsilonDecay = 1;
+//        }
+//        else
+//        {
+//            //decayStep = 1000000;
+//            //Network.Load("C:\\Users\\Administrateur\\Documents\\Monogame\\CarDeepQ\\netManualSave\\");
 
-            //epsilonDecay = (float)Math.Pow(epsilonMin, (double)1 / totalEpisodes);
-            //epsilonDecay = (float)1 / (totalEpisodes + 1);
-        }
+//            //TargetNetwork = Network.Copy();
 
-        memory = System.Text.Json.JsonSerializer.Deserialize<Tuple<float[], int, float, float[], bool>[]>(System.IO.File.ReadAllText("C:\\Users\\Administrateur\\Documents\\Monogame\\CarDeepQ\\memory"));
-        filledMemory = true;
-    }
+//            //epsilonDecay = (float)Math.Pow(epsilonMin, (double)1 / totalEpisodes);
+//            //epsilonDecay = (float)1 / (totalEpisodes + 1);
+//        }
 
-    public void Remember(float[] state, int action, float reward, float[] nextState, bool done)
-    {
-        memory[iMemory] = new(state, action, reward, nextState, done);
-        iMemory++;
-        if (iMemory > memory.Length - 1)
-        {
-            iMemory = 0;
-            filledMemory = true;
-        }
-    }
+//        memory = System.Text.Json.JsonSerializer.Deserialize<Tuple<float[], int, float, float[], bool>[]>(System.IO.File.ReadAllText("C:\\Users\\Administrateur\\Documents\\Monogame\\CarDeepQ\\memory"));
+//        filledMemory = true;
+//    }
 
-    public int Act(float[] state)
-    {
-        if (!filledMemory)
-            return Rand.NextInt(0, actionSize);
+//    public void Remember(float[] state, int action, float reward, float[] nextState, bool done)
+//    {
+//        memory[iMemory] = new(state, action, reward, nextState, done);
+//        iMemory++;
+//        if (iMemory > memory.Length - 1)
+//        {
+//            iMemory = 0;
+//            filledMemory = true;
+//        }
+//    }
 
-        /*string j =System.Text.Json.JsonSerializer.Serialize(memory);
-        System.IO.File.WriteAllText("C:\\Users\\Administrateur\\Documents\\Monogame\\CarDeepQ\\memory", j);*/
+//    public int Act(float[] state)
+//    {
+//        if (!filledMemory)
+//            return Rand.NextInt(0, actionSize);
 
-        /*decayStep += 1f;
+//        /*string j =System.Text.Json.JsonSerializer.Serialize(memory);
+//        System.IO.File.WriteAllText("C:\\Users\\Administrateur\\Documents\\Monogame\\CarDeepQ\\memory", j);*/
 
-        epsilon = epsilonMin + (1 - epsilonMin) * (float)Math.Exp(-epsilonDecay * decayStep);
-        //epsilon -= 0.001f;
-        var r = Rand.NextDouble();
-        if (r < epsilon)
-        {
-            int r2 = Rand.NextInt(0, actionSize);
-            return r2;
-        }
+//        decayStep += 1f;
 
-        float[] netValues = Network.Forward(state);
-        float max = netValues[0];
-        int argMax = 0;
-        for (int i = 1; i < netValues.Length; i++)
-        {
-            if (netValues[i] > max)
-            {
-                max = netValues[i];
-                argMax = i; int r2 = Rand.NextInt(0, actionSize);
-            }
-            else if (netValues[i] == max && Rand.NextDouble() > 0.5)
-            {
-                argMax = i;
-            }
-        }
+//        epsilon = epsilonMin + (1 - epsilonMin) * (float)Math.Exp(-epsilonDecay * decayStep);
+//        //epsilon -= 0.001f;
+//        var r = Rand.NextDouble();
+//        if (r < epsilon)
+//        {
+//            int r2 = Rand.NextInt(0, actionSize);
+//            return r2;
+//        }
 
-        //Debug.LogUpdate(argMax);
-        return argMax;
-    }
+//        float[] netValues = Network.Forward(state);
+//        float max = netValues[0];
+//        int argMax = 0;
+//        for (int i = 1; i < netValues.Length; i++)
+//        {
+//            if (netValues[i] > max)
+//            {
+//                max = netValues[i];
+//                argMax = i; int r2 = Rand.NextInt(0, actionSize);
+//            }
+//            else if (netValues[i] == max && Rand.NextDouble() > 0.5)
+//            {
+//                argMax = i;
+//            }
+//        }
 
-    //This is where we train the algorithm
-    public void Replay()
-    {
-        if (!filledMemory)
-            return;
+//        //Debug.LogUpdate(argMax);
+//        return argMax;
+//    }
 
-        //Create MiniBatch
-        int[] miniBatchIndexes = new int[BatchSize];
-        for (int i = 0; i < BatchSize; i++)
-            miniBatchIndexes[i] = -1;
+//    //This is where we train the algorithm
+//    public void Replay()
+//    {
+//        if (!filledMemory)
+//            return;
 
-        Tuple<float[], int, float, float[], bool>[] miniBatch = new Tuple<float[], int, float, float[], bool>[BatchSize];
-        for (int i = 0; i < BatchSize; i++)
-        {
-            int r;
+//        //Create MiniBatch
+//        int[] miniBatchIndexes = new int[BatchSize];
+//        for (int i = 0; i < BatchSize; i++)
+//            miniBatchIndexes[i] = -1;
 
-            void SetR()
-            {
-                if (filledMemory)
-                    r = Rand.NextInt(0, memory.Length);
-                else
-                    r = Rand.NextInt(0, iMemory);
-            }
+//        Tuple<float[], int, float, float[], bool>[] miniBatch = new Tuple<float[], int, float, float[], bool>[BatchSize];
+//        for (int i = 0; i < BatchSize; i++)
+//        {
+//            int r;
 
-            SetR();
+//            void SetR()
+//            {
+//                if (filledMemory)
+//                    r = Rand.NextInt(0, memory.Length);
+//                else
+//                    r = Rand.NextInt(0, iMemory);
+//            }
 
-            while (miniBatchIndexes.Contains(r))
-                SetR();
+//            SetR();
 
-            miniBatchIndexes[i] = r;
-            miniBatch[i] = memory[r];
-        }
+//            while (miniBatchIndexes.Contains(r))
+//                SetR();
+
+//            miniBatchIndexes[i] = r;
+//            miniBatch[i] = memory[r];
+//        }
 
         
-        float[][] inputs = new float[miniBatch.Length][];
-        float[][] targets = new float[miniBatch.Length][];
-        for (int i = 0; i < miniBatch.Length; i++)
-        {
-            Tuple<float[], int, float, float[], bool> info = miniBatch[i];
-            float[] state = info.Item1;
-            int action = info.Item2;
-            float reward = info.Item3;
-            float[] nextState = info.Item4;
-            bool done = info.Item5;
+//        float[][] inputs = new float[miniBatch.Length][];
+//        float[][] targets = new float[miniBatch.Length][];
+//        for (int i = 0; i < miniBatch.Length; i++)
+//        {
+//            Tuple<float[], int, float, float[], bool> info = miniBatch[i];
+//            float[] state = info.Item1;
+//            int action = info.Item2;
+//            float reward = info.Item3;
+//            float[] nextState = info.Item4;
+//            bool done = info.Item5;
 
-            float target;
-            if (done)
-                target = reward;
-            else
-            {
-                float[] output = Network.Forward(nextState);
-                int argMax = 0;
-                float max = output[0];
-                for (int k = 1; k < output.Length; k++)
-                    if (output[k] > max)
-                    {
-                        max = output[k];
-                        argMax = k;
-                    }
+//            float target;
+//            if (done)
+//                target = reward;
+//            else
+//            {
+//                float[] output = Network.Forward(nextState);
+//                int argMax = 0;
+//                float max = output[0];
+//                for (int k = 1; k < output.Length; k++)
+//                    if (output[k] > max)
+//                    {
+//                        max = output[k];
+//                        argMax = k;
+//                    }
 
-                if (reward == 20)
-                { }
+//                if (reward == 20)
+//                { }
 
-                target = reward + gamma * TargetNetwork.Forward(nextState)[argMax];
-            }
+//                target = reward + gamma * TargetNetwork.Forward(nextState)[argMax];
+//            }
 
-            float[] targetF = Network.Forward(state);
-            targetF[action] = target;
+//            float[] targetF = Network.Forward(state);
+//            targetF[action] = target;
 
-            inputs[i] = state;
-            targets[i] = targetF;
-        }
+//            inputs[i] = state;
+//            targets[i] = targetF;
+//        }
 
-        NetworkManager.TrainNetwork(
-            Network,
-            dataset,
-            
-            );
+//        IEnumerable < (float[] x, float[] u)> d = 
+//        ITrainingDataset dataset = DatasetLoader.Training(, BatchSize);
 
-        Network.Train(inputs, targets);
-    }
 
-    public void RefreshTargetNetwork()
-        => TargetNetwork = Network;//.Copy();
-}*/
+//        Network.Train(inputs, targets);
+//    }
+
+//    public void RefreshTargetNetwork()
+//        => TargetNetwork = Network;//.Copy();
+//}

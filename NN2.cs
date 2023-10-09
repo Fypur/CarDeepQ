@@ -298,16 +298,16 @@ namespace CarDeepQ
                 if (cost == 0)
                 {
 
-                    continue;
+                    //continue;
                 }
 
-                //Computing the error
+                //Computing last layer error (multiplying the arg by derivative of Z)
                 //The error is basically the derivative of the cost by the z of that neuron at that place
                 for (int i = 0; i < Layers[Layers.Length - 1]; i++)
                     error[Neurons.Length - 1][i] = errors[p][i] * ActivationOutDer(Z[Layers.Length - 1][i]);
 
 
-                for (int l = Layers.Length - 1; l >= 1; l--)
+                for (int l = Layers.Length - 1; l >= 2; l--)
                 {
                     error[l - 1] = new float[Neurons[l - 1].Length];
                     for (int prevN = 0; prevN < Neurons[l - 1].Length; prevN++)
@@ -332,8 +332,16 @@ namespace CarDeepQ
                 }
 
                 returnErr[p] = new float[Layers[0]];
-                for(int i = 0; i < Layers[0]; i++)
-                    returnErr[p][i] = error[0][i];
+
+                for (int prevN = 0; prevN < Neurons[0].Length; prevN++)
+                {
+                    for (int n = 0; n < Neurons[1].Length; n++)
+                        returnErr[p][prevN] += error[1][n] * Weights[1][n][prevN];
+                }
+
+
+                /*for (int i = 0; i < Layers[0]; i++)
+                    returnErr[p][i] = error[0][i] ;*/
             }
 
 

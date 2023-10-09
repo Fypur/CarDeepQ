@@ -14,23 +14,23 @@ public class DDQN
     public const int stateSize = 15;
     public const int actionSize = 6;
     public const int inBetweenSize = 16;
+    public int BatchSize = 64;
 
     public int[] layers = new int[] { stateSize, 64, 64, inBetweenSize };
     public int[] layersV = new int[] { inBetweenSize, 64, 1 };
     public int[] layersA = new int[] { inBetweenSize, 64, 64, actionSize };
-    public int BatchSize = 64;
     public int totalEpisodes = 50000;
 
     public float epsilon = 1;
     public float epsilonMin = 0.03f;
-    public float epsilonDecay = 0.0001f;
+    public float epsilonDecay = 0.0004f;
     public float decayStep = 0;
 
     public int targetRefreshRate = 1000;
 
     public int gateTimeStepThreshold = 500;
-    public float baseReward = -0.03f;
-    public float deathReward = -5;
+    public float baseReward = -0.01f;
+    public float deathReward = -10;
     public float gateReward = 10;
 
     public bool learning = true;
@@ -38,13 +38,21 @@ public class DDQN
     public Tuple<float[], int, float, float[], bool>[] memory = new Tuple<float[], int, float, float[], bool>[20000];
     public int iMemory = 0;
     public bool filledMemory = false;
-    private bool saveMemory = true;
+    private bool saveMemory = false;
 
     public NN2 BaseNetwork;
     public NN2 AdvantageNetwork;
     public NN2 ValueNetwork;
 
-    public NN2 TargetNetwork;
+    public NN2 TargetBaseNetwork;
+    public NN2 TargetAdvantageNetwork;
+    public NN2 TargetValueNetwork;
+
+    private float[][] inputs;
+    private float[][] inputVA;
+    private float[][] targets;
+    private float[][] vTargets;
+    private float[][] aTargets;
 
     public DDQN()
     {
@@ -52,8 +60,6 @@ public class DDQN
         AdvantageNetwork = new NN2(layersA, learningRate);
         ValueNetwork = new NN2(layersV, learningRate);
 
-
-        TargetNetwork = BaseNetwork.Copy();
 
         if (!learning)
         {
@@ -65,16 +71,22 @@ public class DDQN
             //decayStep = 1000000;
             //Network.Load("C:\\Users\\zddng\\Documents\\Monogame\\CarDeepQ\\netManualSave\\");
 
-            TargetNetwork = BaseNetwork.Copy();
+            RefreshTargetNetwork();
 
             //epsilonDecay = (float)Math.Pow(epsilonMin, (double)1 / totalEpisodes);
             //epsilonDecay = (float)1 / (totalEpisodes + 1);
         }
         if (!saveMemory)
         {
-            memory = System.Text.Json.JsonSerializer.Deserialize<Tuple<float[], int, float, float[], bool>[]>(System.IO.File.ReadAllText("C:\\Users\\zddng\\Documents\\Monogame\\CarDeepQ\\memory"));
+            memory = System.Text.Json.JsonSerializer.Deserialize<Tuple<float[], int, float, float[], bool>[]>(System.IO.File.ReadAllText("C:\\Users\\Administrateur\\Documents\\Monogame\\CarDeepQ\\memory"));
             filledMemory = true;
         }
+
+        inputs = new float[BatchSize][];
+        inputVA = new float[BatchSize][];
+        targets = new float[BatchSize][];
+        vTargets = new float[BatchSize][];
+        aTargets = new float[BatchSize][];
     }
 
     public float[] FeedForward(float[] input)
@@ -110,6 +122,22 @@ public class DDQN
         return QValues;
     }
 
+    public float[] TargetFeedForward(float[] input)
+    {
+        input = TargetBaseNetwork.FeedForward(input);
+        float[] advantage = TargetAdvantageNetwork.FeedForward(input);
+        float[] value = TargetValueNetwork.FeedForward(input);
+
+        float[] QValues = new float[actionSize];
+
+        float advantageAverage = advantage.Average();
+
+        for (int i = 0; i < QValues.Length; i++)
+            QValues[i] = value[0] + (advantage[i] - advantageAverage);
+
+        return QValues;
+    }
+
     //https://datascience.stackexchange.com/questions/54023/dueling-network-gradient-with-respect-to-advantage-stream
     public void Replay()
     {
@@ -117,13 +145,6 @@ public class DDQN
             return;
 
         Tuple<float[], int, float, float[], bool>[] miniBatch = Sample();
-
-        float[][] inputs = new float[miniBatch.Length][];
-        float[][] inputVA = new float[miniBatch.Length][];
-        float[][] targets = new float[miniBatch.Length][];
-        float[][] vTargets = new float[miniBatch.Length][];
-        float[][] aTargets = new float[miniBatch.Length][];
-
 
         for (int i = 0; i < miniBatch.Length; i++)
         {
@@ -150,9 +171,9 @@ public class DDQN
                 if (reward != -0.01f)
                 { }
 
-                //target = reward + gamma * TargetNetwork.FeedForward(nextState)[argMax];
+                //target = reward + gamma * TargetFeedForward(nextState)[argMax];
                 target = reward + gamma * output[argMax];
-                Debug.LogUpdate("TARGET NETWORK DOES NOT WORK YET!!!!!!");
+                //Debug.LogUpdate("TARGET NETWORK DOES NOT WORK YET!!!!!! (I THINK)");
             }
 
             //output[action] = target;
@@ -164,7 +185,7 @@ public class DDQN
 
             targets[i] = output;
 
-            vTargets[i][0] = 2 * (target - output[action]); //V Gradient according to link
+            vTargets[i][0] = 2 * (target - output[action]); //V Gradient according to link, (gradForA)
             //delta E over delta Q is equal to 0 except for one action so we don't need a for loop
 
 
@@ -186,14 +207,14 @@ public class DDQN
 
         float[][] baseError = new float[miniBatch.Length][];
 
-        /*for (int i = 0; i < miniBatch.Length; i++)
+        for (int i = 0; i < miniBatch.Length; i++)
         {
             baseError[i] = new float[inBetweenSize];
             for (int k = 0; k < inBetweenSize; k++)
                 baseError[i][k] = advError[i][k] + valueError[i][k];
         }
 
-        BaseNetwork.TrainWithError(inputs, baseError);*/
+        BaseNetwork.TrainWithError(inputs, baseError);
     }
 
 
@@ -201,7 +222,7 @@ public class DDQN
     {
         if (filledMemory && saveMemory)
         {
-            System.IO.File.WriteAllText("C:\\Users\\zddng\\Documents\\Monogame\\CarDeepQ\\memory", System.Text.Json.JsonSerializer.Serialize(memory));
+            System.IO.File.WriteAllText("C:\\Users\\Administrateur\\Documents\\Monogame\\CarDeepQ\\memory", System.Text.Json.JsonSerializer.Serialize(memory));
             saveMemory = false;
         }
 
@@ -317,5 +338,9 @@ public class DDQN
     }
 
     public void RefreshTargetNetwork()
-        => TargetNetwork = BaseNetwork.Copy();
+    {
+        TargetBaseNetwork = BaseNetwork.Copy();
+        TargetAdvantageNetwork = AdvantageNetwork.Copy();
+        TargetValueNetwork = ValueNetwork.Copy();
+    }
 }
