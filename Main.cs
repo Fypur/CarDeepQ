@@ -20,11 +20,8 @@ public class Main : Game
     static RewardGate[] RewardGates;
     static int gateIndex = 0;
 
-    private Environment env;
-    
-    private System.IO.StreamWriter writer;
-    Car car;
-    
+    private Env3 env;
+        
     public Main()
     {
         _graphics = new GraphicsDeviceManager(this);
@@ -88,15 +85,10 @@ public class Main : Game
         _spriteBatch = new SpriteBatch(GraphicsDevice);
         Drawing.Init(_spriteBatch, Content.Load<SpriteFont>("font"));
 
-        Engine.CurrentMap = new Map(Vector2.Zero);
+        Engine.CurrentMap = new Map();
         Engine.Cam = new Camera(Vector2.Zero, 0, 1);
 
-        var agent = new DeepQAgent();
-        env = (Environment)Engine.CurrentMap.Instantiate(new Environment(agent, true));
-        /*Engine.CurrentMap.Instantiate(new Environment(agent, true));
-        Engine.CurrentMap.Instantiate(new Environment(agent, true));
-        Engine.CurrentMap.Instantiate(new Environment(agent, true));
-        Engine.CurrentMap.Instantiate(new Environment(agent, true));*/
+        env = new Env3();
         InstantiateEnvironment();
 
         /*for(int i = 0; i < 3; i++)
@@ -162,7 +154,8 @@ public class Main : Game
         GraphicsDevice.SetRenderTarget(Engine.RenderTarget);
         
         _spriteBatch.Begin();
-         
+
+        env.Render();
         Engine.CurrentMap.Render();
         Engine.CurrentMap.UIRender();
         Engine.CurrentMap.UIOverlayRender();

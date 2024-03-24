@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CarDeepQ", "CarDeepQ.csproj
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fiourp", "..\Fiourp\Fiourp.csproj", "{1528AE3A-E3CA-40A5-9DE0-D62C5D7065C0}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AI", "..\AI\AI.csproj", "{B1624B51-1635-4D1F-9BD8-50B39136B036}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -31,6 +33,14 @@ Global
 		{1528AE3A-E3CA-40A5-9DE0-D62C5D7065C0}.Release|Any CPU.Build.0 = Release|x86
 		{1528AE3A-E3CA-40A5-9DE0-D62C5D7065C0}.Release|x64.ActiveCfg = Release|x64
 		{1528AE3A-E3CA-40A5-9DE0-D62C5D7065C0}.Release|x64.Build.0 = Release|x64
+		{B1624B51-1635-4D1F-9BD8-50B39136B036}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{B1624B51-1635-4D1F-9BD8-50B39136B036}.Debug|Any CPU.Build.0 = Debug|x64
+		{B1624B51-1635-4D1F-9BD8-50B39136B036}.Debug|x64.ActiveCfg = Debug|x64
+		{B1624B51-1635-4D1F-9BD8-50B39136B036}.Debug|x64.Build.0 = Debug|x64
+		{B1624B51-1635-4D1F-9BD8-50B39136B036}.Release|Any CPU.ActiveCfg = Release|x64
+		{B1624B51-1635-4D1F-9BD8-50B39136B036}.Release|Any CPU.Build.0 = Release|x64
+		{B1624B51-1635-4D1F-9BD8-50B39136B036}.Release|x64.ActiveCfg = Release|x64
+		{B1624B51-1635-4D1F-9BD8-50B39136B036}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,61 +1,62 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 using System.Xml.Schema;
+using AI;
 using Fiourp;
+using Microsoft.FSharp.Data.UnitSystems.SI.UnitNames;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using ScottPlot;
+using static Fiourp.Input;
 
 namespace CarDeepQ;
 
-public class Environment : Entity
+public class Env3
 {
     public Car Car;
-    private DeepQAgent agent;
-    
+    private PolicyGradient agent;
+
     public int timeStep = 0;
-    private int targetTimeStep = 0;
     private int gateTimeStep = 0;
-    private static bool respawn1 = false;
+    private static bool respawn1 = true;
 
     public RewardGate[] RewardGates = InstantiateGates();
     public Tuple<Vector2, float, int>[] RespawnPoints = LoadRespawnPoints();
     private int gateIndex = 0;
 
-    public Environment(DeepQAgent agent, bool rendered) : base(Vector2.Zero)
+    int batchSize = 4;
+    private List<float[]> states = new();
+    private List<float> rewards = new();
+    private List<int> actions = new();
+    private List<int> episodeLengths = new();
+
+    public Env3()
     {
-        this.agent = agent;
+        agent = new PolicyGradient(new int[] { 15, 32, 32, 32, 3 });
         Car = new Car(new Vector2(230 * Wall.scale + Wall.offsetX, (1000 - 400) * Wall.scale + Wall.offsetY), (float)(3 * Math.PI / 2));
         Car.nextGate = RewardGates[0];
         Engine.CurrentMap.Instantiate(Car);
         Car.Active = false;
         Car.Visible = false;
-        
-        Visible = rendered;
-
-        //p = new();
-        //p.Title("Reward by episode\n" + "Learning Rate : " + agent.learningRate + " gateReward : " + agent.gateReward + " deathReward : " + agent.deathReward + " timeStepReward : " + agent.baseReward);
     }
 
-    public override void Update()
+    public void Update()
     {
-        base.Update();
-
         float[] state = Car.GetState();
         int action = agent.Act(state);
         bool done = Car.Update(action);
 
-        done = done || timeStep > 7000; // || gateTimeStep > agent.gateTimeStepThreshold
+        done = done || timeStep > 7000 || gateTimeStep > 500;
 
-        float reward = agent.baseReward;
+        float reward = -1f;
         RewardGates[gateIndex].Update();
         if (RewardGates[gateIndex].Triggered)
         {
-            reward = agent.gateReward;
+            reward = 20;
             RewardGates[gateIndex].Triggered = false;
             gateIndex++;
-            if(gateIndex >= RewardGates.Length)
+            if (gateIndex >= RewardGates.Length)
                 gateIndex = 0;
             Car.nextGate = RewardGates[gateIndex];
             gateTimeStep = 0;
@@ -63,52 +64,40 @@ public class Environment : Entity
             //Car.respawnPoint = Car.Pos;
             //Car.respawnRot = Car.Rotation;
         }
-        
-        float[] nextState = Car.GetState();
+
         if (done)
-            reward = agent.deathReward;
+            reward = -10;
+
+        states.Add(state);
+        actions.Add(action);
+        rewards.Add(reward);
 
         Car.TotalReward += reward;
-        Debug.LogUpdate($"Episode {Main.episode}, Score {Car.TotalReward}, Epsilon: {agent.epsilon}, Timestep: {timeStep}");
+        Debug.LogUpdate($"Episode {Main.episode}, Score {Car.TotalReward}, Timestep: {timeStep}");
 
-        if(Input.GetKeyDown(Keys.D2)){
-            agent.decayStep = 10000;
-        }
+        timeStep++;
+        gateTimeStep++;
 
-        if(Input.GetKeyDown(Keys.D9) && agent.epsilonMin < 0.99f){
-            agent.epsilonMin += 0.01f;
-        }
-
-        if(Input.GetKeyDown(Keys.D8) && agent.epsilonMin > 0.01f){
-            agent.epsilonMin -= 0.01f;
-        }
-
-        if(agent.learning)
-            agent.Remember(state, action, reward, nextState, done);
-
-        if (agent.learning && (agent.filledMemory || agent.iMemory > agent.BatchSize))
-            agent.Replay();
 
         if (done)
         {
-            if(Car.TotalReward >= 100)
+            if (Car.TotalReward >= 100)
                 Console.ForegroundColor = ConsoleColor.Yellow;
-            else if(Car.TotalReward >= 50)
+            else if (Car.TotalReward >= 50)
                 Console.ForegroundColor = ConsoleColor.Green;
-            else if(Car.TotalReward >= 30)
+            else if (Car.TotalReward >= 30)
                 Console.ForegroundColor = ConsoleColor.Blue;
             else
                 Console.ForegroundColor = ConsoleColor.Red;
 
-            Console.WriteLine($"Episode {Main.episode}, Score {Car.TotalReward}, Epsilon: {agent.epsilon}");
+            Console.WriteLine($"Episode {Main.episode}, Score {Car.TotalReward}");
             Console.ForegroundColor = ConsoleColor.Gray;
 
             Car.nextGate = RewardGates[gateIndex];
 
-            //pointsX.Add(Main.episode);
-            //pointsY.Add(Car.TotalReward);
-
             Main.episode++;
+
+            episodeLengths.Add(timeStep);
             timeStep = 0;
             gateTimeStep = 0;
 
@@ -117,46 +106,22 @@ public class Environment : Entity
             Car.respawnRot = r.Item2; // + Rand.NextFloat(-0.7f, 0.7f);
 
             Car.Reset();
-            
+
             gateIndex = r.Item3;
 
-            if (Main.episode >= 1000 && Main.episode % 1000 == 0)
+            if (episodeLengths.Count > batchSize)
             {
-                //agent.Network.Save("C:\\Users\\Administateur\\Documents\\Monogame\\CarDeepQ\\mode2\\Episode" + Main.episode);
-            }
-            /*if(Main.episode > 100 && Car.TotalReward == agent.deathReward)
-                agent.epsilon += 0.03f;*/
-        }
-
-        /*if (Input.GetKeyDown(Keys.S) && Visible)
-            agent.Network.Save("/home/f/Documents/CarDeepQ/saves/net3");
-        if (Input.GetKeyDown(Keys.L) && Visible)
-            agent.Network.Load("/home/f/Documents/CarDeepQ/saves/net3");*/
-
-        //if(Input.GetKeyDown(Keys.S))
-            //agent.Network.Save("C:\\Users\\Administateur\\Documents\\Monogame\\CarDeepQ\\netManualSave\\");
-        
-        
-        
-        
-        timeStep++;
-        gateTimeStep++;
-
-        if (Visible)
-        {
-            targetTimeStep++;
-            if (targetTimeStep >= agent.targetRefreshRate)
-            {
-                agent.RefreshTargetNetwork();
-                targetTimeStep = 0;
+                agent.Train(new PolicyGradientBatch(states.ToArray(), rewards.ToArray(), actions.ToArray(), episodeLengths.ToArray()));
+                states.Clear();
+                actions.Clear();
+                rewards.Clear();
+                episodeLengths.Clear();
             }
         }
     }
 
-    public override void Render()
+    public void Render()
     {
-        base.Render();
-
         Car.Render();
         RewardGates[gateIndex].Render();
     }
@@ -166,7 +131,7 @@ public class Environment : Entity
 
     public static Tuple<Vector2, float, int>[] LoadRespawnPoints()
     {
-        if(!respawn1)
+        if (!respawn1)
             return new Tuple<Vector2, float, int>[]
             {
                 new(new Vector2(230 * Wall.scale + Wall.offsetX, (1000 - 400) * Wall.scale + Wall.offsetY), (float)(3 * Math.PI / 2), 0),
