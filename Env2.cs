@@ -22,7 +22,7 @@ namespace CarDeepQ
         public float deathReward = -10;
         public float gateReward = 30;
 
-        protected override string rewardGraphSaveLocation => "./reward";
+        protected override string rewardGraphSaveLocation => "./reward.png";
 
         public Env2(DeepQAgent2 agent) : base(agent)
         {
@@ -46,7 +46,7 @@ namespace CarDeepQ
                 else
                     Console.ForegroundColor = ConsoleColor.Red;
 
-                Console.WriteLine($"Episode {Main.episode}, Score {Car.TotalReward}, Epsilon: {Agent.Epsilon}");
+                Console.WriteLine($"Episode {Main.episode}, Score {Car.TotalReward}, Epsilon: {Agent.Epsilon}, Beta:{Agent.ReplayBuffer.Beta}");
                 Console.ForegroundColor = ConsoleColor.Gray;
 
                 Car.nextGate = RewardGates[gateIndex];

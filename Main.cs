@@ -20,7 +20,7 @@ public class Main : Game
     static RewardGate[] RewardGates;
     static int gateIndex = 0;
 
-    private Env3 env;
+    private Env2 env;
         
     public Main()
     {
@@ -88,7 +88,8 @@ public class Main : Game
         Engine.CurrentMap = new Map();
         Engine.Cam = new Camera(Vector2.Zero, 0, 1);
 
-        env = new Env3();
+        env = new Env2(new AI.DeepQAgent2([15, 32, 32, 32, 3], totalTimesteps:1000000, targetRefreshRate:50, learningRate:0.003f, memorySize:4096 * 2));
+        //env.Agent.Load("./newMod", false);
         InstantiateEnvironment();
 
         /*for(int i = 0; i < 3; i++)
@@ -133,7 +134,10 @@ public class Main : Game
         }*/
 
         //Engine.Update(gameTime);
-        env.Update();
+        env.DoStep();
+
+        if (Input.GetKeyDown(Keys.S))
+            env.Agent.Save("./savedMod");
 
         //for (int i = 0; i < 100; i++)
             //env.Update();
