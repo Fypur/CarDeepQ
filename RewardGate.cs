@@ -9,7 +9,7 @@ public class RewardGate : Trigger
 {
     public bool Triggered = false;
     public RewardGate(Vector2 begin, Vector2 end)
-        : base(begin, (int)(begin - end).Length(), 10, new() { typeof(Car) }, new Sprite(Color.White))
+        : base(begin, (int)(begin - end).Length(), 10, new() { typeof(Car) }, new Sprite(Color.Green))
     {
         RemoveComponent(base.Collider);
         Collider = new BoxColliderRotated(Vector2.Zero, Width, 10, (end - begin).ToAngleDegrees(), Vector2.Zero);

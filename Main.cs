@@ -21,7 +21,9 @@ public class Main : Game
     static int gateIndex = 0;
 
     private Env2 env;
-        
+    public const bool AI = false;
+    private static Tile Background;
+
     public Main()
     {
         _graphics = new GraphicsDeviceManager(this);
@@ -29,8 +31,11 @@ public class Main : Game
         IsMouseVisible = true;
         instance = this;
 
-        _graphics.SynchronizeWithVerticalRetrace = false;
-        IsFixedTimeStep = false;
+        if (AI)
+        {
+            _graphics.SynchronizeWithVerticalRetrace = false;
+            IsFixedTimeStep = false;
+        }
 
         /*var n5 = new NN5(new int[] { 10, 256, 256, 10 }, 0.01f);
         n5.Train(null, new float[10, 2] { { 1, 1 }, { 1, 1 }, { 1, 1 }, { 1, 1 }, { 1, 1 }, { 1, 1 }, { 1, 1 }, { 1, 1 }, { 1, 1 }, { 1, 1 } });*/
@@ -69,15 +74,10 @@ public class Main : Game
 
     protected override void Initialize()
     {
-        // TODO: Add your initialization logic here
-
         Engine.Initialize(_graphics, Content, 1280, 720, new RenderTarget2D(GraphicsDevice, 1600, 900), "");
         Debug.DebugMode = true;
 
         base.Initialize();
-
-        /*for (int i = 0; i < 10000000; i++)
-            Update(new GameTime(new TimeSpan(0),new TimeSpan(0),true));*/
     }
 
     protected override void LoadContent()
@@ -91,6 +91,9 @@ public class Main : Game
         env = new Env2(new AI.DeepQAgent2([15, 32, 32, 32, 3], totalTimesteps:1000000, targetRefreshRate:50, learningRate:0.003f, memorySize:4096 * 2));
         //env.Agent.Load("./newMod", false);
         InstantiateEnvironment();
+        Background = new Tile(-Vector2.One * 150, (int)Engine.ScreenSize.X, (int)Engine.ScreenSize.Y, new Sprite(DataManager.Textures["track"]));
+        Background.Layer = -1;
+        Engine.CurrentMap.Instantiate(Background);
 
         /*for(int i = 0; i < 3; i++)
             Engine.CurrentMap.Instantiate(new Environment(agent, false));*/
@@ -119,30 +122,11 @@ public class Main : Game
         if (Input.GetKeyDown(Keys.D1))
             Debug.DebugMode = !Debug.DebugMode;
 
-
-        /*RewardGates[gateIndex].Update();
-        
-        if (RewardGates[gateIndex].Triggered)
-        {
-            gateIndex++;
-            //Car.respawnPoint = Car.Pos;
-            //Car.respawnRot = Car.Rotation;
-        }
-        
-        if (Input.GetKeyDown(Keys.D3)){
-            writer.WriteLine($"new Vector2({car.Pos.X}, {car.Pos.Y}), {car.Rotation}f, {gateIndex}f");
-        }*/
-
         //Engine.Update(gameTime);
         env.DoStep();
 
         if (Input.GetKeyDown(Keys.S))
             env.Agent.Save("./savedMod");
-
-        //for (int i = 0; i < 100; i++)
-            //env.Update();
-        /*if(Engine.Deltatime != 0)
-            Console.WriteLine(1 / Engine.Deltatime);*/
 
         Input.UpdateOldState();
 
@@ -159,10 +143,10 @@ public class Main : Game
         
         _spriteBatch.Begin();
 
-        env.Render();
         Engine.CurrentMap.Render();
-        Engine.CurrentMap.UIRender();
-        Engine.CurrentMap.UIOverlayRender();
+        env.Render();
+        /*Engine.CurrentMap.UIRender();
+        Engine.CurrentMap.UIOverlayRender();*/
 
         if(Debug.DebugMode)
         {

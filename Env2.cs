@@ -3,6 +3,7 @@ using Fiourp;
 using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -35,6 +36,8 @@ namespace CarDeepQ
 
         protected override bool Done()
         {
+            return false;
+
             if (done)
             {
                 if (Car.TotalReward >= 100)
@@ -71,7 +74,11 @@ namespace CarDeepQ
 
         protected override float UpdateAndReward(int action)
         {
-            done = Car.Update(action);
+            if (Main.AI)
+                done = Car.Update(action);
+            else
+                Car.Update();
+
             done = done || EpisodeStep > 7000;
 
             float reward = baseReward;
@@ -102,6 +109,9 @@ namespace CarDeepQ
         {
             Car.Render();
             RewardGates[gateIndex].Render();
+
+            foreach (RewardGate r in RewardGates)
+                r.Render();
         }
 
         public static float Normalize(float value, float min, float max)

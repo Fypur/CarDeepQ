@@ -1,11 +1,12 @@
+using Fiourp;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Xml;
-using Fiourp;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Input;
 using static Fiourp.Input;
+using static System.Collections.Specialized.BitVector32;
 
 namespace CarDeepQ;
 
@@ -26,7 +27,7 @@ public class Car : Actor
 
     public float TotalReward = 0;
     
-    public Car(Vector2 position, float rotation) : base(position, 20, 10, 0, new Sprite(Color.Red))
+    public Car(Vector2 position, float rotation) : base(position, 20, 10, 0, new Sprite(DataManager.Textures["car"]))
     {
         respawnPoint = Pos;
         Rotation = rotation;
@@ -35,7 +36,12 @@ public class Car : Actor
         RemoveComponent(base.Collider);
         Collider = new BoxColliderRotated(Vector2.Zero, Width, Height, rotation, HalfSize);
         base.Collider = Collider;
+        Collider.DebugDraw = false;
         AddComponent(Collider);
+
+        Sprite.Scale = Vector2.One * 0.06f;
+        Sprite.Offset = new Vector2(9, 4);
+        Sprite.Origin = new Vector2(DataManager.Textures["car"].Width, DataManager.Textures["car"].Height) / 2;
     }
 
     public override void Update()
@@ -44,38 +50,27 @@ public class Car : Actor
 
         FrontVector = VectorHelper.Rotate(Vector2.UnitX, Rotation).Normalized();
 
-        Velocity -= Velocity * friction;
+        int factor = 1;
+        Velocity -= Velocity * friction * factor;
 
-        if (Input.GetKey(Keys.Z))
-            Velocity += FrontVector * accelSpeed;
+        if (Input.GetKey(Keys.Right))
+            Rotation += turnForce * factor;
 
-        if (Input.GetKey(Keys.D))
-            Rotation += turnForce;
-        
-        if (Input.GetKey(Keys.Q))
-            Rotation -= turnForce;
-        
-        if(Input.GetKey(Keys.S))
-            Velocity -= FrontVector * accelSpeed;
+        if (Input.GetKey(Keys.Left))
+            Rotation -= turnForce * factor;
 
-        if (Input.GetKey(Keys.V))
-            Pos = Input.MousePos;
+        if (Input.GetKey(Keys.Up))
+            Velocity += FrontVector * accelSpeed * factor;
 
         while (Rotation > Math.PI * 2)
             Rotation -= (float)Math.PI * 2;
         while (Rotation < 0)
             Rotation += (float)Math.PI * 2;
-        
-        Collider.Rotation = Rotation;
-        
-        Sprite.Color = Color.Red;
-        
-        MoveX(Velocity.X, Reset);
-        MoveY(Velocity.Y, Reset);
 
-        /*float[] state = GetState();
-        for (int i = 0; i < state.Length; i++)
-            Debug.LogUpdate(state[i]);*/
+        Collider.Rotation = Rotation;
+
+        MoveX(Velocity.X);
+        MoveY(Velocity.Y);
     }
 
     public bool Update(int action)
@@ -127,8 +122,10 @@ public class Car : Actor
 
     public override void Render()
     {
-        //Drawing.Draw(Bounds, Rotation, Color.Red);
-        Drawing.Draw(Drawing.PointTexture, new Rectangle(Bounds.X + (int)HalfSize.X, Bounds.Y + (int)HalfSize.Y, Bounds.Width, Bounds.Height), Sprite.Color, Rotation,  Vector2.One / 2, Vector2.One);
+        Sprite.Rotation = Rotation + (float)Math.PI / 2;
+        
+        base.Render();
+        //Drawing.Draw(Drawing.PointTexture, new Rectangle(Bounds.X + (int)HalfSize.X, Bounds.Y + (int)HalfSize.Y, Bounds.Width, Bounds.Height), Sprite.Color, Rotation,  Vector2.One / 2, Vector2.One);
     }
 
     public float[] GetState()
