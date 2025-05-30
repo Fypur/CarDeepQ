@@ -61,6 +61,8 @@ public class Car : Actor
 
         if (Input.GetKey(Keys.Up))
             Velocity += FrontVector * accelSpeed * factor;
+        if (Input.GetKey(Keys.Down))
+            Velocity -= FrontVector * accelSpeed * factor;
 
         while (Rotation > Math.PI * 2)
             Rotation -= (float)Math.PI * 2;
@@ -111,7 +113,7 @@ public class Car : Actor
         
         Collider.Rotation = Rotation;
         
-        Sprite.Color = Color.Red;
+        //Sprite.Color = Color.Red;
 
         bool done = false;
         MoveX(Velocity.X, () => done = true);
@@ -147,21 +149,30 @@ public class Car : Actor
         //Debug.LogUpdate("vlen  " + VectorHelper.Round(VectorHelper.Projection(Velocity, FrontVector)));
         //state[9] = Environment.Normalize(((BoxColliderRotated)nextGate.Collider).Rotation, 0, (float)Math.PI * 2);
 
-        state[10] = Environment.Normalize(Math.Min(Vector2.Distance(MiddlePos, nextGate.MiddlePos), 200), 0, 200); //distance to gate
-        state[11] = Environment.Normalize(((BoxColliderRotated)nextGate.Collider).Rotation, -3.14f, 3.14f); //Rotation of gate
+        
 
         int sameDirX = Math.Sign(Vector2.Dot(VectorHelper.Normal(FrontVector), Velocity));
         float vLenX = VectorHelper.Projection(Velocity, VectorHelper.Normal(FrontVector)).Length() / 2.5f;
 
         if (sameDirX == 1)
-            state[12] = vLenX; //Right speed
+            state[10] = vLenX; //Right speed
         else
-            state[13] = vLenX; //Left speed
+            state[11] = vLenX; //Left speed
 
-        float dirGate = Environment.Normalize(VectorHelper.GetAngle(FrontVector, nextGate.MiddleExactPos - MiddleExactPos), -3.14f, 3.14f);
+        Vector2 gateMidPos = ((BoxColliderRotated)nextGate.Collider).Center + nextGate.Pos;
+        float dirGate = Environment.Normalize(VectorHelper.GetAngle(FrontVector, gateMidPos - MiddleExactPos), -3.14f, 3.14f);
         if (dirGate > 0.5f) dirGate = -dirGate + 1;
 
-        state[14] = Environment.Normalize(dirGate, 0, 0.5f); //Direction to gate 
+        state[12] = Environment.Normalize(Math.Min(Vector2.Distance(MiddlePos, gateMidPos), 200), 0, 200); //distance to gate
+        state[13] = Environment.Normalize(((BoxColliderRotated)nextGate.Collider).Rotation, -3.14f, 3.14f); //Rotation of gate
+
+        state[14] = Environment.Normalize(dirGate, 0, 0.5f); //Direction to gate
+
+        /*Debug.Event(() =>
+        {
+            Drawing.DrawDottedLine(MiddlePos, gateMidPos, Color.Red, 1, 6, 4);
+            Drawing.DrawLine(gateMidPos, gateMidPos + dirGate * 20, Color.Red, 1);
+        });*/
 
         for (int i = 0; i < state.Length; i++)
             if (float.IsNaN(state[i]) || state[i] < 0 || state[i] > 1.1f)
@@ -224,6 +235,8 @@ public class Car : Actor
                 }
 
                 ray.Distance = Vector2.Distance(ray.Begin, ray.EndPoint);
+                /*Debug.Line(ray.Begin, ray.EndPoint, Color.Red, 1);
+                Debug.PointUpdate(ray.EndPoint);*/
                 float v = Ease.Reverse(Environment.Normalize(ray.Distance, 0, ray.MaxLength));
                 distances.Add(Math.Clamp(v, 0, 1));
             }

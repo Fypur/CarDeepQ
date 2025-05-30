@@ -88,7 +88,7 @@ public class Main : Game
         Engine.CurrentMap = new Map();
         Engine.Cam = new Camera(Vector2.Zero, 0, 1);
 
-        env = new Env2(new AI.DeepQAgent2([15, 32, 32, 32, 3], totalTimesteps:1000000, targetRefreshRate:50, learningRate:0.003f, memorySize:4096 * 2));
+        env = new Env2(new AI.DeepQAgent2([15, 32, 32, 32, 3], totalTimesteps:1000000, targetRefreshRate:400, learningRate:0.001f, memorySize:4096 * 2, gamma:0.99f), AI);
         //env.Agent.Load("./newMod", false);
         InstantiateEnvironment();
         Background = new Tile(-Vector2.One * 150, (int)Engine.ScreenSize.X, (int)Engine.ScreenSize.Y, new Sprite(DataManager.Textures["track"]));
@@ -122,8 +122,14 @@ public class Main : Game
         if (Input.GetKeyDown(Keys.D1))
             Debug.DebugMode = !Debug.DebugMode;
 
+        if (Input.GetKeyDown(Keys.V))
+            env.Car.MiddleExactPos = Input.ScreenMousePos;
+
+        if (Input.GetKeyDown(Keys.B))
+            Debug.Clear();
+
         //Engine.Update(gameTime);
-        env.DoStep();
+            env.DoStep();
 
         if (Input.GetKeyDown(Keys.S))
             env.Agent.Save("./savedMod");

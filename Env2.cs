@@ -19,37 +19,34 @@ namespace CarDeepQ
         int gateIndex;
         bool done;
 
-        public float baseReward = -0.1f;
-        public float deathReward = -10;
-        public float gateReward = 30;
+        public float baseReward = -0.01f;
+        public float deathReward = -2;
+        public float gateReward = 3;
 
-        protected override string rewardGraphSaveLocation => "./reward.png";
-
-        public Env2(DeepQAgent2 agent) : base(agent)
+        public Env2(DeepQAgent2 agent, bool aI) : base(agent, aI:aI)
         {
             Car = (Car)Engine.CurrentMap.Instantiate(new Car(new Vector2(230 * Wall.scale + Wall.offsetX, (1000 - 400) * Wall.scale + Wall.offsetY), (float)(3 * Math.PI / 2)));
             Car.Active = false;
             Car.nextGate = RewardGates[0];
             gateIndex = 0;
             done = false;
+            rewardGraphSaveLocation = "./reward.png";
         }
 
         protected override bool Done()
         {
-            return false;
-
             if (done)
             {
-                if (Car.TotalReward >= 100)
+                if (Car.TotalReward >= 10)
                     Console.ForegroundColor = ConsoleColor.Yellow;
-                else if (Car.TotalReward >= 50)
+                else if (Car.TotalReward >= 5)
                     Console.ForegroundColor = ConsoleColor.Green;
-                else if (Car.TotalReward >= 30)
+                else if (Car.TotalReward >= 3)
                     Console.ForegroundColor = ConsoleColor.Blue;
                 else
                     Console.ForegroundColor = ConsoleColor.Red;
 
-                Console.WriteLine($"Episode {Main.episode}, Score {Car.TotalReward}, Epsilon: {Agent.Epsilon}, Beta:{Agent.ReplayBuffer.Beta}");
+                Console.WriteLine($"Episode {Main.episode}, Score {Car.TotalReward}, Epsilon: {Agent.Epsilon}, Beta:{Agent.ReplayBuffer.Beta}, Timestep:{Step}");
                 Console.ForegroundColor = ConsoleColor.Gray;
 
                 Car.nextGate = RewardGates[gateIndex];
@@ -110,8 +107,8 @@ namespace CarDeepQ
             Car.Render();
             RewardGates[gateIndex].Render();
 
-            foreach (RewardGate r in RewardGates)
-                r.Render();
+            /*foreach (RewardGate r in RewardGates)
+                r.Render();*/
         }
 
         public static float Normalize(float value, float min, float max)
