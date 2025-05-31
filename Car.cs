@@ -38,6 +38,7 @@ public class Car : Actor
         base.Collider = Collider;
         Collider.DebugDraw = false;
         AddComponent(Collider);
+        Collider.Rotation = rotation;
 
         Sprite.Scale = Vector2.One * 0.06f;
         Sprite.Offset = new Vector2(9, 4);
@@ -50,29 +51,25 @@ public class Car : Actor
 
         FrontVector = VectorHelper.Rotate(Vector2.UnitX, Rotation).Normalized();
 
-        int factor = 1;
+        float factor = 1;
+        bool done = false;
         Velocity -= Velocity * friction * factor;
 
         if (Input.GetKey(Keys.Right))
-            Rotation += turnForce * factor;
-
+            Collider.Rotate(turnForce * factor, 0.002f, new List<Entity>(Engine.CurrentMap.Data.Solids), () => done = true);
+        
         if (Input.GetKey(Keys.Left))
-            Rotation -= turnForce * factor;
+            Collider.Rotate(-turnForce * factor, 0.002f, new List<Entity>(Engine.CurrentMap.Data.Solids), () => done = true);
+
+        Rotation = Collider.Rotation;
 
         if (Input.GetKey(Keys.Up))
             Velocity += FrontVector * accelSpeed * factor;
         if (Input.GetKey(Keys.Down))
             Velocity -= FrontVector * accelSpeed * factor;
 
-        while (Rotation > Math.PI * 2)
-            Rotation -= (float)Math.PI * 2;
-        while (Rotation < 0)
-            Rotation += (float)Math.PI * 2;
-
-        Collider.Rotation = Rotation;
-
-        MoveX(Velocity.X);
-        MoveY(Velocity.Y);
+        MoveX(Velocity.X, () => done = true);
+        MoveY(Velocity.Y, () => done = true);
     }
 
     public bool Update(int action)
@@ -81,41 +78,24 @@ public class Car : Actor
         
         FrontVector = VectorHelper.Rotate(Vector2.UnitX, Rotation).Normalized();
 
-        int factor = 1;
+        float factor = 1;
+        bool done = false;
         Velocity -= Velocity * friction * factor;
 
         if (action == 1)
-            Rotation += turnForce * factor;
-        
+            Collider.Rotate(turnForce * factor, 0.002f, new List<Entity>(Engine.CurrentMap.Data.Solids), () => done = true);
+
         if (action == 2)
-            Rotation -= turnForce * factor;
+            Collider.Rotate(-turnForce * factor, 0.002f, new List<Entity>(Engine.CurrentMap.Data.Solids), () => done = true);
+
+        Rotation = Collider.Rotation;
 
         if (action == 0)
             Velocity += FrontVector * accelSpeed * factor;
 
-
-        /*if (action == 1 || action == 3)
-            Rotation += turnForce * factor;
-        
-        if (action == 2 || action == 4)
-            Rotation -= turnForce * factor;
-
-        if (action == 0 || action == 3 || action == 4)
-            Velocity += FrontVector * accelSpeed * factor;
-
-        if(action == 5)
+        /*if(action == 4)
             Velocity -= FrontVector * accelSpeed * factor;*/
-
-        while (Rotation > Math.PI * 2)
-            Rotation -= (float)Math.PI * 2;
-        while (Rotation < 0)
-            Rotation += (float)Math.PI * 2;
         
-        Collider.Rotation = Rotation;
-        
-        //Sprite.Color = Color.Red;
-
-        bool done = false;
         MoveX(Velocity.X, () => done = true);
         MoveY(Velocity.Y, () => done = true);
 

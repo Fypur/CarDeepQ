@@ -121,6 +121,8 @@ public class Main : Game
 
         if (Input.GetKeyDown(Keys.D1))
             Debug.DebugMode = !Debug.DebugMode;
+        if (Input.GetKeyDown(Keys.NumPad0))
+            Engine.RenderTarget.SaveAsPng(File.Create("./screen.png"), Engine.RenderTarget.Width, Engine.RenderTarget.Height);
 
         if (Input.GetKeyDown(Keys.V))
             env.Car.MiddleExactPos = Input.ScreenMousePos;
@@ -141,7 +143,6 @@ public class Main : Game
 
     protected override void Draw(GameTime gameTime)
     {
-
         GraphicsDevice.Clear(Color.Black);
         //return;
         
